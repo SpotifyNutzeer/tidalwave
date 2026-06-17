@@ -1,0 +1,21 @@
+{
+  "recenttracks": {
+    "@attr": { "user": "alice", "page": "1", "perPage": "200", "totalPages": "2", "total": "201" },
+    "track": [
+      {
+        "artist": { "#text": "Kavinsky", "mbid": "a1" },
+        "name": "Nightcall",
+        "album": { "#text": "OutRun", "mbid": "b1" },
+        "mbid": "c1",
+        "@attr": { "nowplaying": "true" }
+      },
+      {
+        "artist": { "#text": "Daft Punk", "mbid": "a2" },
+        "name": "Aerodynamic",
+        "album": { "#text": "Discovery", "mbid": "" },
+        "mbid": "",
+        "date": { "uts": "1700000000", "#text": "14 Nov 2023, 22:13" }
+      }
+    ]
+  }
+}
