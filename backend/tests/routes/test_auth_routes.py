@@ -29,3 +29,21 @@ async def test_callback_creates_user_and_sets_cookie(api):
     assert resp.status_code == 307
     cookie = resp.cookies[COOKIE_NAME]
     assert SessionCodec("test-secret").decode(cookie) is not None
+
+
+async def test_me_returns_401_when_anonymous(api):
+    client, app = api
+    resp = await client.get("/auth/me")
+    assert resp.status_code == 401
+
+
+async def test_me_returns_current_user(api, db_session):
+    from tidalwave.auth.service import upsert_user_from_session
+    from tidalwave.auth.session import COOKIE_NAME, SessionCodec
+
+    client, app = api
+    user = await upsert_user_from_session(db_session, "alice", "sk", mode="open", allowlist=[])
+    cookie = SessionCodec("test-secret").encode(user.id)
+    resp = await client.get("/auth/me", headers={"Cookie": f"{COOKIE_NAME}={cookie}"})
+    assert resp.status_code == 200
+    assert resp.json() == {"username": "alice", "is_admin": True}

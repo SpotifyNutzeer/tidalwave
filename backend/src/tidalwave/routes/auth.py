@@ -8,7 +8,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from tidalwave.auth.registration import RegistrationDenied
 from tidalwave.auth.service import upsert_user_from_session
-from tidalwave.auth.session import COOKIE_NAME, SessionCodec
+from tidalwave.auth.session import COOKIE_NAME, SessionCodec, current_user
+from tidalwave.models.db import User
 from tidalwave.config import Settings
 from tidalwave.deps import get_lastfm_client, get_session, get_settings
 from tidalwave.lastfm.client import LastfmClient, LastfmError
@@ -59,3 +60,8 @@ async def logout() -> Response:
     resp = Response(status_code=204)
     resp.delete_cookie(COOKIE_NAME)
     return resp
+
+
+@router.get("/me")
+async def me(user: User = Depends(current_user)) -> dict:
+    return {"username": user.lastfm_username, "is_admin": user.is_admin}

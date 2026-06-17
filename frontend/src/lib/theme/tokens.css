@@ -1,0 +1,12 @@
+/* Catppuccin Mocha (default) + Latte. Mirror linkhop's palette. */
+:root, [data-theme='mocha'] {
+  --base: #1e1e2e; --mantle: #181825; --surface: #313244;
+  --text: #cdd6f4; --subtext: #a6adc8; --mauve: #cba6f7; --blue: #89b4fa;
+  --green: #a6e3a1; --peach: #fab387; --red: #f38ba8;
+}
+[data-theme='latte'] {
+  --base: #eff1f5; --mantle: #e6e9ef; --surface: #ccd0da;
+  --text: #4c4f69; --subtext: #6c6f85; --mauve: #8839ef; --blue: #1e66f5;
+  --green: #40a02b; --peach: #fe640b; --red: #d20f39;
+}
+body { background: var(--base); color: var(--text); font-family: system-ui, sans-serif; margin: 0; }
