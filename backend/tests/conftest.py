@@ -1,0 +1,44 @@
+import os
+
+import pytest
+import pytest_asyncio
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+
+from tidalwave.models.db import Base
+
+# Tests run against the running Postgres. Override via TIDALWAVE_TEST_DATABASE_URL.
+TEST_DB_URL = os.environ.get(
+    "TIDALWAVE_TEST_DATABASE_URL",
+    "postgresql+asyncpg://tidalwave:tidalwave@localhost:5432/tidalwave",
+)
+
+
+@pytest.fixture(autouse=True)
+def _isolate_env_file(tmp_path, monkeypatch):
+    # pydantic-settings reads .env from CWD; keep tests from seeing local secrets.
+    monkeypatch.chdir(tmp_path)
+
+
+@pytest_asyncio.fixture(scope="session")
+async def _engine():
+    engine = create_async_engine(TEST_DB_URL, future=True)
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
+        await conn.run_sync(Base.metadata.create_all)
+    yield engine
+    await engine.dispose()
+
+
+@pytest_asyncio.fixture
+async def db_session(_engine):
+    # Each test runs in a transaction rolled back at teardown — full isolation.
+    connection = await _engine.connect()
+    trans = await connection.begin()
+    factory = async_sessionmaker(bind=connection, expire_on_commit=False)
+    session = factory()
+    try:
+        yield session
+    finally:
+        await session.close()
+        await trans.rollback()
+        await connection.close()
