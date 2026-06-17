@@ -37,5 +37,12 @@
   },
   "dependencies": {
     "layerchart": "^1.0.0"
+  },
+  "pnpm": {
+    "overrides": {
+      "cookie@<0.7.0": ">=0.7.0",
+      "esbuild@<0.28.1": ">=0.28.1",
+      "js-yaml@<4.2.0": ">=4.2.0"
+    }
   }
 }
