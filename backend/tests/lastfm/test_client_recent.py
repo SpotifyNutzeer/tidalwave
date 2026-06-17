@@ -37,5 +37,33 @@ async def test_parses_recent_tracks_and_nowplaying(client):
     assert done.now_playing is False
     assert done.played_at == datetime.fromtimestamp(1700000000, tz=UTC)
     assert done.artist == "Daft Punk"
+    assert done.track_title == "Aerodynamic"
     assert done.album == "Discovery"
     assert done.album_mbid is None  # empty string normalized to None
+
+
+@respx.mock
+async def test_single_track_dict_is_wrapped(client):
+    """Last.fm returns a bare dict (not a list) when there is exactly one track."""
+    payload = {
+        "recenttracks": {
+            "@attr": {"user": "alice", "page": "1", "perPage": "200", "totalPages": "1", "total": "1"},
+            "track": {
+                "artist": {"#text": "Daft Punk", "mbid": "a2"},
+                "name": "Aerodynamic",
+                "album": {"#text": "Discovery", "mbid": ""},
+                "mbid": "",
+                "date": {"uts": "1700000000", "#text": "14 Nov 2023, 22:13"},
+            },
+        }
+    }
+    respx.get("https://ws.audioscrobbler.com/2.0/").respond(json=payload)
+
+    page = await client.get_recent_tracks("alice", page=1)
+
+    assert len(page.scrobbles) == 1
+    track = page.scrobbles[0]
+    assert track.track_title == "Aerodynamic"
+    assert track.artist == "Daft Punk"
+    assert track.now_playing is False
+    assert track.played_at == datetime.fromtimestamp(1700000000, tz=UTC)

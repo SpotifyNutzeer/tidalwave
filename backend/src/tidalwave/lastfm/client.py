@@ -22,7 +22,7 @@ class LastfmError(Exception):
 
 @dataclass(frozen=True, slots=True)
 class RecentTracksPage:
-    scrobbles: list[Scrobble]
+    scrobbles: tuple[Scrobble, ...]
     page: int
     total_pages: int
 
@@ -74,7 +74,7 @@ def _parse_recent_tracks(data: dict) -> RecentTracksPage:
     raw = block.get("track", [])
     if isinstance(raw, dict):  # Last.fm returns a bare object for a single track
         raw = [raw]
-    scrobbles = [_parse_track(t) for t in raw]
+    scrobbles = tuple(_parse_track(t) for t in raw)
     return RecentTracksPage(
         scrobbles=scrobbles,
         page=int(attr["page"]),
@@ -96,4 +96,5 @@ def _parse_track(t: dict) -> Scrobble:
         track_mbid=t.get("mbid") or None,
         artist_mbid=t.get("artist", {}).get("mbid") or None,
         album_mbid=t.get("album", {}).get("mbid") or None,
+        now_playing=now_playing,
     )

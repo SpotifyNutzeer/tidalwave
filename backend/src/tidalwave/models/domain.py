@@ -15,7 +15,4 @@ class Scrobble:
     track_mbid: str | None = None
     artist_mbid: str | None = None
     album_mbid: str | None = None
-
-    @property
-    def now_playing(self) -> bool:
-        return self.played_at is None
+    now_playing: bool = False
