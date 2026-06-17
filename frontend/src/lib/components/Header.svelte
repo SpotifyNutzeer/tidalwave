@@ -1,6 +1,6 @@
 <script lang="ts">
   import ThemeToggle from './ThemeToggle.svelte';
-  let { children } = $props();
+  let { children }: { children?: import('svelte').Snippet } = $props();
 </script>
 
 <header>
