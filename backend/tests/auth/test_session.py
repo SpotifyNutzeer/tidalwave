@@ -1,4 +1,3 @@
-import pytest
 
 from tidalwave.auth.session import SessionCodec
 

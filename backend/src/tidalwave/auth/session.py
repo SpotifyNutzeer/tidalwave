@@ -1,6 +1,11 @@
 from __future__ import annotations
 
+from fastapi import Depends, HTTPException, Request
 from itsdangerous import BadSignature, URLSafeSerializer
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from tidalwave.deps import get_session, get_settings
+from tidalwave.models.db import User
 
 COOKIE_NAME = "tw_session"
 
@@ -19,13 +24,6 @@ class SessionCodec:
             return None
         uid = data.get("uid")
         return uid if isinstance(uid, int) else None
-
-
-from fastapi import Depends, HTTPException, Request  # noqa: E402
-from sqlalchemy.ext.asyncio import AsyncSession  # noqa: E402
-
-from tidalwave.deps import get_session, get_settings  # noqa: E402
-from tidalwave.models.db import User  # noqa: E402
 
 
 async def current_user(

@@ -38,7 +38,7 @@ async def test_ingest_walks_all_pages_and_advances_state(db_session):
 
     assert inserted == 3
     listens = (await db_session.execute(select(Listen))).scalars().all()
-    assert {l.track_title for l in listens} == {"t1", "t2", "t3"}
+    assert {listen.track_title for listen in listens} == {"t1", "t2", "t3"}
     state = await get_sync_state(db_session, user.id)
     assert state.last_played_at == datetime.fromtimestamp(3000, tz=UTC)  # newest
 

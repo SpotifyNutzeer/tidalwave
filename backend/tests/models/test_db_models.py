@@ -1,4 +1,4 @@
-from tidalwave.models.db import Base, Listen, Share, SyncState, User
+from tidalwave.models.db import Base, Listen, User
 
 
 def test_tables_registered():
