@@ -1,5 +1,6 @@
 import os
 
+import httpx
 import pytest
 import pytest_asyncio
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
@@ -42,3 +43,27 @@ async def db_session(_engine):
         await session.close()
         await trans.rollback()
         await connection.close()
+
+
+@pytest_asyncio.fixture
+async def api(db_session, monkeypatch):
+    monkeypatch.setenv("TIDALWAVE_LASTFM_API_KEY", "KEY")
+    monkeypatch.setenv("TIDALWAVE_LASTFM_API_SECRET", "SECRET")
+    monkeypatch.setenv("TIDALWAVE_SESSION_SECRET", "test-secret")
+    monkeypatch.setenv("TIDALWAVE_REGISTRATION_MODE", "open")
+    monkeypatch.setenv("TIDALWAVE_PUBLIC_BASE_URL", "http://test")
+    monkeypatch.setenv("TIDALWAVE_DATABASE_URL", TEST_DB_URL)
+    from tidalwave.deps import get_session, get_settings
+    from tidalwave.main import create_app
+
+    get_settings.cache_clear()
+    app = create_app()
+
+    async def _use_test_session():
+        yield db_session
+
+    app.dependency_overrides[get_session] = _use_test_session
+    transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+        yield client, app
+    get_settings.cache_clear()

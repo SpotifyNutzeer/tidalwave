@@ -2,11 +2,12 @@ from __future__ import annotations
 
 from contextlib import asynccontextmanager
 
+import httpx
 from fastapi import FastAPI
 
 from tidalwave.db import make_engine, make_session_factory
 from tidalwave.deps import get_settings
-from tidalwave.routes import health
+from tidalwave.routes import auth, health
 
 
 def create_app() -> FastAPI:
@@ -19,11 +20,14 @@ def create_app() -> FastAPI:
         # lifespan events). Lifespan only disposes them on shutdown.
         yield
         await engine.dispose()
+        await app.state.http.aclose()
 
     app = FastAPI(title="tidalwave", lifespan=lifespan)
     app.state.engine = engine
     app.state.session_factory = make_session_factory(engine)
+    app.state.http = httpx.AsyncClient(timeout=15.0)
     app.include_router(health.router)
+    app.include_router(auth.router)
     return app
 
 
