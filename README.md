@@ -14,7 +14,7 @@ for full background.
 ## Architecture
 
 ```
-Tidal app ──scrobbels──► Last.fm ◄──polls──  poller (CronJob)
+Tidal app ──scrobbles──► Last.fm ◄──polls──  poller (CronJob)
                                                    │ upsert
                                                    ▼
                                            Postgres (listens)

@@ -15,7 +15,8 @@ spec:
   template:
     metadata:
       labels:
-        {{- include "tidalwave.backendSelectorLabels" . | nindent 8 }}
+        {{- include "tidalwave.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: migration
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:

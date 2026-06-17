@@ -17,7 +17,8 @@ spec:
       template:
         metadata:
           labels:
-            {{- include "tidalwave.backendSelectorLabels" . | nindent 12 }}
+            {{- include "tidalwave.selectorLabels" . | nindent 12 }}
+            app.kubernetes.io/component: poller
         spec:
           {{- with .Values.imagePullSecrets }}
           imagePullSecrets:
