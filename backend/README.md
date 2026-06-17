@@ -74,12 +74,16 @@ All settings are read from environment variables prefixed with `TIDALWAVE_` (or 
 
 | Method | Path | Query params | Description |
 |---|---|---|---|
-| `GET` | `/stats/top-artists` | `limit` (default 20) | Top artists by listen count for the authenticated user. |
-| `GET` | `/stats/top-tracks` | `limit` (default 20) | Top tracks by listen count. |
-| `GET` | `/stats/top-albums` | `limit` (default 20) | Top albums by listen count. |
-| `GET` | `/stats/clock` | — | 24-element array of listen counts by hour of day. |
+| `GET` | `/stats/top-artists` | `limit` (default 20), `since`, `until` | Top artists by listen count for the authenticated user. |
+| `GET` | `/stats/top-tracks` | `limit` (default 20), `since`, `until` | Top tracks by listen count. |
+| `GET` | `/stats/top-albums` | `limit` (default 20), `since`, `until` | Top albums by listen count. |
+| `GET` | `/stats/clock` | `since`, `until` | 24-element array of listen counts by hour of day (UTC). |
+| `GET` | `/stats/weekday` | `since`, `until` | 7-element array of listen counts by ISO weekday (index 0 = Monday). |
+| `GET` | `/stats/history` | `bucket` (`day`\|`week`\|`month`, default `day`), `since`, `until` | Chronological time-series: `[{"period": <iso>, "count": N}]`. |
 | `GET` | `/stats/recent` | `limit` (default 50) | Most recent listens. |
-| `GET` | `/stats/summary` | — | `{"total_listens": N}`. |
+| `GET` | `/stats/summary` | `since`, `until` | `{"total_listens": N}`. |
+
+`since` / `until` are optional ISO-8601 datetimes (`until` is exclusive).
 
 ### Shares (session-gated)
 
@@ -108,6 +112,13 @@ tidalwave-poll
 ```
 
 This is intended to be run on a schedule, e.g. every 5 minutes via cron or a Kubernetes CronJob.
+Per-user failures are isolated (one bad account never aborts the run). If a user's Last.fm
+session key is invalid/revoked (auth error), that user is flagged `disconnected` and skipped on
+subsequent polls until they reconnect via `/auth/login`; transient errors (rate limits, outages)
+are logged and retried on the next run.
+
+Reads are authenticated with each user's stored Last.fm session key, so private "hide recent
+listening" profiles are readable; public profiles work either way.
 
 **Full-history backfill** — imports a user's entire Last.fm history (may take a while for accounts with many scrobbles):
 
