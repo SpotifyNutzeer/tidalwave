@@ -128,4 +128,6 @@ async def shared_recent(
     token: str, limit: int = 50, session: AsyncSession = Depends(get_session)
 ) -> list[dict]:
     share = await _resolve_share(session, token)
-    return await queries.recent_listens(session, share.user_id, limit=limit)
+    return await queries.recent_listens(
+        session, share.user_id, limit=limit, since=share.range_from, until=share.range_to
+    )

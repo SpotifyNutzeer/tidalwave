@@ -29,6 +29,7 @@
 
   $effect(() => {
     (async () => {
+      error = false;
       try {
         const [s, ar, tr, al, cl, wd, rc] = await Promise.all([
           api.shared.summary(token), api.shared.topArtists(token), api.shared.topTracks(token),

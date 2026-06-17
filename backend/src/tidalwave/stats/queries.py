@@ -85,13 +85,12 @@ async def listens_over_time(session: AsyncSession, user_id: int, *, bucket: str 
     ]
 
 
-async def recent_listens(session: AsyncSession, user_id: int, *, limit: int = 50) -> list[dict]:
-    stmt = (
-        select(Listen.track_title, Listen.artist, Listen.album, Listen.played_at)
-        .where(Listen.user_id == user_id)
-        .order_by(Listen.played_at.desc())
-        .limit(limit)
-    )
+async def recent_listens(session: AsyncSession, user_id: int, *, limit: int = 50,
+                         since=None, until=None) -> list[dict]:
+    stmt = _scope(
+        select(Listen.track_title, Listen.artist, Listen.album, Listen.played_at),
+        user_id, since, until,
+    ).order_by(Listen.played_at.desc()).limit(limit)
     return [
         {"track": r[0], "artist": r[1], "album": r[2], "played_at": r[3].isoformat()}
         for r in (await session.execute(stmt)).all()

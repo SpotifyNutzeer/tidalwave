@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { api, type Bucket } from '$lib/api/client';
+  import { api, ApiError, type Bucket } from '$lib/api/client';
+  import { loadMe } from '$lib/stores/auth';
   import SummaryCard from './SummaryCard.svelte';
   import TopList from './TopList.svelte';
   import ListeningClock from './ListeningClock.svelte';
@@ -16,6 +17,7 @@
   let history = $state<{ period: string; count: number }[]>([]);
   let recent = $state<{ track: string; artist: string; album: string | null; played_at: string }[]>([]);
   let bucket = $state<Bucket>('day');
+  let error = $state(false);
 
   async function loadHistory(b: Bucket) {
     bucket = b;
@@ -24,20 +26,32 @@
 
   $effect(() => {
     (async () => {
-      const [s, ar, tr, al, cl, wd, rc] = await Promise.all([
-        api.summary(), api.topArtists(10), api.topTracks(10), api.topAlbums(10),
-        api.clock(), api.weekday(), api.recent(20)
-      ]);
-      total = s.total_listens;
-      artists = ar.map((x) => ({ label: x.artist, count: x.count }));
-      tracks = tr.map((x) => ({ label: x.track, count: x.count }));
-      albums = al.map((x) => ({ label: x.album, count: x.count }));
-      hours = cl; days = wd; recent = rc;
-      await loadHistory('day');
+      try {
+        const [s, ar, tr, al, cl, wd, rc] = await Promise.all([
+          api.summary(), api.topArtists(10), api.topTracks(10), api.topAlbums(10),
+          api.clock(), api.weekday(), api.recent(20)
+        ]);
+        total = s.total_listens;
+        artists = ar.map((x) => ({ label: x.artist, count: x.count }));
+        tracks = tr.map((x) => ({ label: x.track, count: x.count }));
+        albums = al.map((x) => ({ label: x.album, count: x.count }));
+        hours = cl; days = wd; recent = rc;
+        await loadHistory('day');
+      } catch (e) {
+        // Session expired/revoked mid-view: re-check auth so the page falls back to the connect CTA.
+        if (e instanceof ApiError && e.status === 401) {
+          await loadMe();
+        } else {
+          error = true;
+        }
+      }
     })();
   });
 </script>
 
+{#if error}
+  <p class="error">Could not load your stats. Please try again.</p>
+{:else}
 <div class="grid">
   <SummaryCard {total} />
   <HistoryChart points={history} {bucket} onBucketChange={loadHistory} />
@@ -48,7 +62,9 @@
   <WeekdayChart {days} />
   <RecentList items={recent} />
 </div>
+{/if}
 
 <style>
   .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; padding: 1.5rem; }
+  .error { text-align: center; padding: 4rem 1.5rem; color: var(--subtext); }
 </style>
