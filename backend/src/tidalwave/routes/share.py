@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import secrets
+from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import func, select, update
@@ -68,3 +69,63 @@ async def shared_summary(
         session, share.user_id, since=share.range_from, until=share.range_to
     )
     return {"total_listens": total}
+
+
+@router.get("/shared/{token}/top-tracks")
+async def shared_top_tracks(
+    token: str, limit: int = 20, session: AsyncSession = Depends(get_session)
+) -> list[dict]:
+    share = await _resolve_share(session, token)
+    return await queries.top_tracks(
+        session, share.user_id, limit=limit, since=share.range_from, until=share.range_to
+    )
+
+
+@router.get("/shared/{token}/top-albums")
+async def shared_top_albums(
+    token: str, limit: int = 20, session: AsyncSession = Depends(get_session)
+) -> list[dict]:
+    share = await _resolve_share(session, token)
+    return await queries.top_albums(
+        session, share.user_id, limit=limit, since=share.range_from, until=share.range_to
+    )
+
+
+@router.get("/shared/{token}/clock")
+async def shared_clock(
+    token: str, session: AsyncSession = Depends(get_session)
+) -> list[int]:
+    share = await _resolve_share(session, token)
+    return await queries.listening_clock(
+        session, share.user_id, since=share.range_from, until=share.range_to
+    )
+
+
+@router.get("/shared/{token}/weekday")
+async def shared_weekday(
+    token: str, session: AsyncSession = Depends(get_session)
+) -> list[int]:
+    share = await _resolve_share(session, token)
+    return await queries.listening_weekday(
+        session, share.user_id, since=share.range_from, until=share.range_to
+    )
+
+
+@router.get("/shared/{token}/history")
+async def shared_history(
+    token: str,
+    bucket: Literal["day", "week", "month"] = "day",
+    session: AsyncSession = Depends(get_session),
+) -> list[dict]:
+    share = await _resolve_share(session, token)
+    return await queries.listens_over_time(
+        session, share.user_id, bucket=bucket, since=share.range_from, until=share.range_to
+    )
+
+
+@router.get("/shared/{token}/recent")
+async def shared_recent(
+    token: str, limit: int = 50, session: AsyncSession = Depends(get_session)
+) -> list[dict]:
+    share = await _resolve_share(session, token)
+    return await queries.recent_listens(session, share.user_id, limit=limit)
