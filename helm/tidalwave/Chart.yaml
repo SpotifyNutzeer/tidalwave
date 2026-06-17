@@ -4,3 +4,11 @@ description: Self-hosted multi-user Tidal listening tracker (via Last.fm)
 type: application
 version: 0.1.0
 appVersion: "0.1.0"
+home: https://github.com/SpotifyNutzeer/tidalwave
+sources:
+  - https://github.com/SpotifyNutzeer/tidalwave
+keywords:
+  - tidal
+  - lastfm
+  - listening-tracker
+  - self-hosted
