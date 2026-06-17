@@ -7,7 +7,7 @@ from fastapi import FastAPI
 
 from tidalwave.db import make_engine, make_session_factory
 from tidalwave.deps import get_settings
-from tidalwave.routes import auth, health, stats
+from tidalwave.routes import auth, health, share, stats
 
 
 def create_app() -> FastAPI:
@@ -29,6 +29,7 @@ def create_app() -> FastAPI:
     app.include_router(health.router)
     app.include_router(auth.router)
     app.include_router(stats.router)
+    app.include_router(share.router)
     return app
 
 
