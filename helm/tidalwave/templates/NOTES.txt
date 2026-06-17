@@ -1,0 +1,26 @@
+Tidalwave has been deployed!
+
+{{- if .Values.ingress.enabled }}
+Application URL:
+  {{- if .Values.ingress.tls.enabled }}
+  https://{{ .Values.ingress.host }}
+  {{- else }}
+  http://{{ .Values.ingress.host }}
+  {{- end }}
+
+Connect your Last.fm account at:
+  {{- if .Values.ingress.tls.enabled }}
+  https://{{ .Values.ingress.host }}/auth/login
+  {{- else }}
+  http://{{ .Values.ingress.host }}/auth/login
+  {{- end }}
+{{- else }}
+No Ingress configured. Access via port-forward:
+  kubectl port-forward svc/{{ include "tidalwave.fullname" . }}-frontend 8080:80
+{{- end }}
+
+{{- if .Values.secrets.existingSecret }}
+
+Using existing Secret: {{ .Values.secrets.existingSecret }}
+Ensure it contains the required keys (see values.yaml for the list).
+{{- end }}

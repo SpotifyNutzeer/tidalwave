@@ -1,0 +1,250 @@
+name: frontend
+
+on:
+  pull_request:
+    paths:
+      - 'frontend/**'
+      - 'backend/src/tidalwave/**'
+      - '.github/workflows/frontend.yml'
+  push:
+    branches: [main, master]
+  release:
+    types: [published]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      # packageManager in frontend/package.json is not auto-detected because
+      # pnpm/action-setup@v4 inspects the repo root, not the frontend subdir.
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
+          run_install: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - uses: astral-sh/setup-uv@v7
+        with:
+          python-version: '3.12'
+          enable-cache: true
+          cache-dependency-glob: "backend/uv.lock"
+
+      - name: Install frontend deps
+        run: pnpm install --frozen-lockfile
+
+      - name: Export backend openapi.json
+        working-directory: backend
+        run: |
+          uv sync --locked --no-dev
+          uv run --no-sync python -c "from tidalwave.main import app; import json; json.dump(app.openapi(), open('openapi.json','w'))"
+
+      - name: Generate API schema
+        run: pnpm gen:api
+
+      - name: Check schema drift
+        run: git diff --exit-code src/lib/api/schema.d.ts
+
+      - name: Type check
+        run: pnpm check
+
+      - name: Unit + component tests
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build
+
+  e2e:
+    runs-on: ubuntu-latest
+    needs: check
+    defaults:
+      run:
+        working-directory: frontend
+    env:
+      E2E_BASE_URL: http://127.0.0.1:5173
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
+          run_install: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - uses: astral-sh/setup-uv@v7
+        with:
+          python-version: '3.12'
+          enable-cache: true
+          cache-dependency-glob: "backend/uv.lock"
+
+      - name: Install frontend deps
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium
+
+      # backend/docker-compose.yml provides Postgres only (no Redis in tidalwave).
+      - name: Start Postgres
+        working-directory: backend
+        run: docker compose up -d --wait
+
+      - name: Install backend
+        working-directory: backend
+        run: uv sync --locked --no-dev
+
+      - name: Initialise backend schema
+        working-directory: backend
+        env:
+          TIDALWAVE_DATABASE_URL: "postgresql+asyncpg://tidalwave:tidalwave@127.0.0.1:5432/tidalwave"
+        run: uv run --no-sync alembic upgrade head
+
+      # TIDALWAVE_DATABASE_URL: docker compose bindet Postgres nur auf 127.0.0.1,
+      # deshalb erzwingen wir hier explizit IPv4.
+      - name: Start backend (uvicorn)
+        working-directory: backend
+        env:
+          TIDALWAVE_DATABASE_URL: "postgresql+asyncpg://tidalwave:tidalwave@127.0.0.1:5432/tidalwave"
+          TIDALWAVE_LASTFM_API_KEY: "ci-placeholder"
+          TIDALWAVE_LASTFM_API_SECRET: "ci-placeholder"
+          TIDALWAVE_SESSION_SECRET: "ci-placeholder-secret"
+          TIDALWAVE_PUBLIC_BASE_URL: "http://127.0.0.1:8080"
+          TIDALWAVE_REGISTRATION_MODE: "open"
+        run: |
+          nohup env \
+            TIDALWAVE_DATABASE_URL="$TIDALWAVE_DATABASE_URL" \
+            TIDALWAVE_LASTFM_API_KEY="$TIDALWAVE_LASTFM_API_KEY" \
+            TIDALWAVE_LASTFM_API_SECRET="$TIDALWAVE_LASTFM_API_SECRET" \
+            TIDALWAVE_SESSION_SECRET="$TIDALWAVE_SESSION_SECRET" \
+            TIDALWAVE_PUBLIC_BASE_URL="$TIDALWAVE_PUBLIC_BASE_URL" \
+            TIDALWAVE_REGISTRATION_MODE="$TIDALWAVE_REGISTRATION_MODE" \
+            uv run --no-sync uvicorn tidalwave.main:app --host 127.0.0.1 --port 8080 \
+            > uvicorn.log 2>&1 < /dev/null &
+          disown
+          if ! npx --yes wait-on -t 60000 http-get://127.0.0.1:8080/health; then
+            echo "::group::uvicorn.log"
+            cat uvicorn.log || true
+            echo "::endgroup::"
+            exit 1
+          fi
+
+      - name: Start frontend dev server
+        run: |
+          nohup pnpm dev --host 127.0.0.1 > vite.log 2>&1 < /dev/null &
+          disown
+
+      - name: Wait for frontend
+        run: |
+          if ! npx --yes wait-on -t 60000 http-get://127.0.0.1:5173; then
+            echo "::group::vite.log"
+            cat vite.log || true
+            echo "::endgroup::"
+            exit 1
+          fi
+
+      - name: Run E2E
+        run: pnpm test:e2e
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: frontend/playwright-report/
+
+      - name: Upload backend log
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-log
+          path: backend/uvicorn.log
+
+      - name: Upload vite log
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vite-log
+          path: frontend/vite.log
+
+      - name: Show vite log tail
+        if: failure()
+        run: tail -100 frontend/vite.log || true
+
+  image:
+    runs-on: ubuntu-latest
+    needs: check
+    if: github.event_name == 'release'
+    permissions:
+      packages: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
+          run_install: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      # Needed to export openapi.json before generating the TS client that
+      # ships in the image build context.
+      - uses: astral-sh/setup-uv@v7
+        with:
+          python-version: '3.12'
+          enable-cache: true
+          cache-dependency-glob: "backend/uv.lock"
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # ghcr.io verlangt lowercase repo-Paths; github.repository_owner
+      # behält die Groß-/Kleinschreibung bei.
+      - name: Lowercase owner
+        run: echo "OWNER_LC=${GITHUB_REPOSITORY_OWNER,,}" >> "$GITHUB_ENV"
+
+      - name: Derive image version (strip leading v)
+        env:
+          TAG_NAME: ${{ github.event.release.tag_name }}
+        run: echo "VERSION=${TAG_NAME#v}" >> "$GITHUB_ENV"
+
+      - name: Export backend openapi.json
+        working-directory: backend
+        run: |
+          uv sync --locked --no-dev
+          uv run --no-sync python -c "from tidalwave.main import app; import json; json.dump(app.openapi(), open('openapi.json','w'))"
+
+      - name: Generate schema for image build
+        working-directory: frontend
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm gen:api
+
+      - name: Build and push image
+        uses: docker/build-push-action@v5
+        with:
+          context: frontend
+          push: true
+          tags: |
+            ghcr.io/${{ env.OWNER_LC }}/tidalwave-frontend:${{ env.VERSION }}
+            ghcr.io/${{ env.OWNER_LC }}/tidalwave-frontend:latest

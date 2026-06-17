@@ -1,0 +1,72 @@
+# helm/tidalwave/values.yaml
+# -- Backend
+backend:
+  image:
+    repository: ghcr.io/OWNER/tidalwave-backend
+    # -- Defaults to Chart.appVersion
+    tag: ""
+    pullPolicy: IfNotPresent
+  replicas: 1
+  resources: {}
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+# -- Frontend
+frontend:
+  image:
+    repository: ghcr.io/OWNER/tidalwave-frontend
+    # -- Defaults to Chart.appVersion
+    tag: ""
+    pullPolicy: IfNotPresent
+  replicas: 1
+  resources: {}
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+# -- Poller CronJob (runs `tidalwave-poll`)
+poller:
+  enabled: true
+  # -- Cron schedule; default every 5 minutes
+  schedule: "*/5 * * * *"
+
+# -- Ingress
+ingress:
+  enabled: true
+  className: ""
+  host: ""
+  annotations: {}
+  tls:
+    enabled: false
+    secretName: ""
+
+# -- Application config (non-sensitive)
+config:
+  logLevel: INFO
+  # -- External URL of the site; used to build the Last.fm OAuth callback and
+  # to decide whether the session cookie is marked Secure (https).
+  publicBaseUrl: ""
+  # -- "open" (anyone may register on connect) or "allowlist"
+  registrationMode: allowlist
+  # -- Comma-separated Last.fm usernames allowed to register (allowlist mode)
+  registrationAllowlist: ""
+
+# -- Sensitive credentials
+secrets:
+  databaseUrl: ""
+  lastfmApiKey: ""
+  lastfmApiSecret: ""
+  sessionSecret: ""
+  # -- Use an existing Secret instead of creating one. It must contain keys:
+  # TIDALWAVE_DATABASE_URL, TIDALWAVE_LASTFM_API_KEY,
+  # TIDALWAVE_LASTFM_API_SECRET, TIDALWAVE_SESSION_SECRET
+  existingSecret: ""
+
+# -- Alembic migrations (pre-install/pre-upgrade hook)
+migration:
+  enabled: true
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""

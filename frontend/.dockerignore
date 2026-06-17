@@ -1,0 +1,13 @@
+node_modules
+.svelte-kit
+build
+tests
+.git
+.github
+*.md
+.env*
+.idea
+playwright-report
+test-results
+coverage
+*.log
