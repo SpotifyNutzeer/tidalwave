@@ -5,11 +5,13 @@
 
 ## Zusammenfassung
 
-`tidalwave` ist ein selbst-gehostetes Listening-History-Tracking-Tool im Geist von
-[your_spotify](https://github.com/Yooooomi/your_spotify) — aber für **Tidal-Nutzer**.
+`tidalwave` ist ein selbst-gehostetes, **mehrbenutzerfähiges** Listening-History-Tracking-
+Tool im Geist von [your_spotify](https://github.com/Yooooomi/your_spotify) — aber für
+**Tidal-Nutzer**.
 
 Es ist ein **eigenständiges Projekt** (eigenes Repo), unabhängig von `linkhop`, mit
-demselben Tech-Stack. Datenquelle ist **Last.fm**, nicht Tidal direkt.
+demselben Tech-Stack. Datenquelle ist **Last.fm**, nicht Tidal direkt. Jeder Nutzer
+verbindet sein eigenes Last.fm-Konto und sieht ausschließlich seine eigenen Daten.
 
 ## Kernentscheidung: Warum Last.fm statt Tidal-API
 
@@ -77,11 +79,11 @@ Jede Einheit hat einen klaren Zweck und eine definierte Schnittstelle:
 
 ## Datenmodell
 
-`user_id` ist von Tag 1 vorhanden — Single-User ist „ein User-Datensatz", Multi-User
-später ohne Migration.
+Mehrbenutzerfähig von Tag 1 — jede Tabelle ist über `user_id` getrennt; ein Nutzer kann
+niemals Daten eines anderen sehen.
 
-- **`users`** — `id`, `lastfm_username`, `lastfm_session_key`, `is_owner` (bool),
-  `connected_at`.
+- **`users`** — `id`, `lastfm_username` (unique), `lastfm_session_key`, `is_admin` (bool;
+  erster verbundener Account = Admin, für künftige Instanz-Verwaltung), `created_at`.
 - **`listens`** — `id`, `user_id`, `track_title`, `artist`, `album`, `played_at` (UTC,
   indiziert), optionale Last.fm-MBIDs (`track_mbid`, `artist_mbid`, `album_mbid`).
   **Dedup-Key:** `UNIQUE (user_id, artist, track_title, played_at)` → Re-Polling und
@@ -98,7 +100,10 @@ später ohne Migration.
 2. User autorisiert auf Last.fm → Redirect zu `/auth/callback?token=<token>`.
 3. Backend ruft `auth.getSession` (signiert mit `api_sig` = MD5 aus
    `api_key + method + token + secret`) → erhält **permanenten Session-Key**.
-4. Session-Key wird beim User gespeichert; eine App-Session (Cookie) wird etabliert.
+4. **Connect = Account-Erstellung + Login:** existiert noch kein User mit diesem
+   `lastfm_username`, wird ein Account angelegt (sonst eingeloggt). Session-Key wird
+   gespeichert, eine App-Session (Cookie) etabliert. Kein separates Passwort — die
+   Last.fm-Identität *ist* der Account.
 
 Vorteil ggü. Spotify-OAuth: Der Last.fm-Session-Key **läuft nie ab** — kein
 Refresh-Token-Handling. History-Reads laufen mit dem Session-Key und funktionieren auch
@@ -107,15 +112,20 @@ bei **privaten** Profilen.
 ### Konfiguration
 
 - App-weit: Last.fm **`API_KEY` + `API_SECRET`** (Env-Vars).
-- Owner: die Instanz wird vom **ersten verbundenen Account** beansprucht (`is_owner=true`).
+- **`REGISTRATION_MODE`** (Env): `open` (jeder kann sich per Connect registrieren) oder
+  `allowlist` (nur vorab erlaubte Last.fm-Usernames). Default für eine öffentlich
+  erreichbare Instanz: `allowlist`.
+- Der erste verbundene Account erhält `is_admin=true`.
 
 ### Zugang (gated) + Sharing
 
-- **Gated by default:** Dashboards sind nur für die Owner-Session sichtbar.
-- **Sharing (wie your_spotify):** Der Owner kann **Share-Links** erstellen — ein
-  zufälliges `share_token` gewährt öffentlichen, **read-only**-Zugriff auf die Dashboards
-  (optional auf einen Zeitraum begrenzt). Aufruf über `/share/<token>` rendert die
-  Dashboards ohne Login. Links sind widerrufbar (`revoked_at`).
+- **Mehrbenutzer, gated:** Jeder Nutzer ist eingeloggt und sieht **ausschließlich seine
+  eigenen** Dashboards. Alle Stats-Endpoints sind streng nach der `user_id` der Session
+  gefiltert — ein Nutzer kann nie fremde Daten sehen.
+- **Sharing (wie your_spotify):** Jeder Nutzer kann eigene **Share-Links** erstellen — ein
+  zufälliges `share_token` gewährt öffentlichen, **read-only**-Zugriff auf *seine*
+  Dashboards (optional auf einen Zeitraum begrenzt). Aufruf über `/share/<token>` rendert
+  die Dashboards ohne Login. Links sind widerrufbar (`revoked_at`).
 
 ## Fehlerbehandlung
 
@@ -139,16 +149,17 @@ bei **privaten** Profilen.
 ## MVP-Scope
 
 **Drin:**
-- Last.fm Connect-Flow (OAuth-artig) + Session-Handling
-- Ingest-Poller + einmaliger Backfill
-- `listens`-Speicherung mit Dedup
+- Last.fm Connect-Flow (OAuth-artig) = Account-Erstellung + Login + Session-Handling
+- **Mehrbenutzer:** mehrere Accounts, je Nutzer eigene Daten; `REGISTRATION_MODE`
+  (`open`/`allowlist`)
+- Ingest-Poller (über alle verbundenen User) + einmaliger Backfill pro User
+- `listens`-Speicherung mit Dedup, strikt nach `user_id` getrennt
 - Stats-API: Top Tracks/Artists/Albums je Zeitraum, Listening-Clock, Verlauf, Gesamtzahlen
 - Ein Dashboard (SvelteKit, Catppuccin)
-- Gated-Zugang + widerrufbare Share-Links
-- Single-User (ein Owner-Account)
+- Gated-Zugang + widerrufbare Share-Links pro Nutzer
 
 **Raus für V1 (YAGNI):**
-- Multi-User-Verwaltungs-UI (Datenmodell ist aber vorbereitet)
+- Admin-/Instanz-Verwaltungs-UI (Account-Management läuft V1 über Env-Config + Connect)
 - ListenBrainz als alternative Quelle
 - Genre-Analysen
 - „Wrapped"-Style-Jahresrückblicke
