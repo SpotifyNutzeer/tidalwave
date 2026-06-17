@@ -16,16 +16,22 @@ class RecentTracksSource(Protocol):
     ) -> RecentTracksPage: ...
 
 
-async def ingest_user(
-    session: AsyncSession, client: RecentTracksSource, user: User
-) -> int:
-    """Fetch all scrobbles since the last sync and store them. Returns inserted count."""
+async def ingest_user(session: AsyncSession, client: RecentTracksSource, user: User) -> int:
     state = await get_sync_state(session, user.id)
     from_ts: int | None = None
     if state is not None and state.last_played_at is not None:
-        # Last.fm `from` is inclusive; +1s avoids re-fetching the boundary scrobble.
         from_ts = int(state.last_played_at.timestamp()) + 1
+    return await _collect_and_store(session, client, user, from_ts=from_ts)
 
+
+async def backfill_user(session: AsyncSession, client: RecentTracksSource, user: User) -> int:
+    """Import the full history (no sync floor). Idempotent via the dedup constraint."""
+    return await _collect_and_store(session, client, user, from_ts=None)
+
+
+async def _collect_and_store(
+    session: AsyncSession, client: RecentTracksSource, user: User, *, from_ts: int | None
+) -> int:
     collected: list[Scrobble] = []
     page = 1
     total_pages = 1
@@ -36,7 +42,6 @@ async def ingest_user(
         page += 1
 
     inserted = await upsert_listens(session, user.id, collected)
-
     newest = max((s.played_at for s in collected if s.played_at is not None), default=None)
     if newest is not None:
         await advance_sync_state(session, user.id, last_played_at=newest)
