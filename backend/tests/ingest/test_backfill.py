@@ -14,7 +14,7 @@ class FakeClient:
         self.pages = pages
         self.calls = []
 
-    async def get_recent_tracks(self, username, *, from_ts=None, page=1, limit=200):
+    async def get_recent_tracks(self, username, *, from_ts=None, page=1, limit=200, session_key=None):
         self.calls.append((from_ts, page))
         return self.pages[page]
 

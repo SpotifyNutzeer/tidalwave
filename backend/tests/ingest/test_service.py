@@ -16,9 +16,11 @@ class FakeClient:
     def __init__(self, pages: dict[int, RecentTracksPage]) -> None:
         self.pages = pages
         self.calls: list[tuple[str, int | None, int]] = []
+        self.session_keys: list[str | None] = []
 
-    async def get_recent_tracks(self, username, *, from_ts=None, page=1, limit=200):
+    async def get_recent_tracks(self, username, *, from_ts=None, page=1, limit=200, session_key=None):
         self.calls.append((username, from_ts, page))
+        self.session_keys.append(session_key)
         return self.pages[page]
 
 
@@ -41,6 +43,8 @@ async def test_ingest_walks_all_pages_and_advances_state(db_session):
     assert {listen.track_title for listen in listens} == {"t1", "t2", "t3"}
     state = await get_sync_state(db_session, user.id)
     assert state.last_played_at == datetime.fromtimestamp(3000, tz=UTC)  # newest
+    # session key must be forwarded on every page fetch
+    assert all(sk == "sk" for sk in client.session_keys)
 
 
 async def test_ingest_uses_from_ts_after_first_run(db_session):

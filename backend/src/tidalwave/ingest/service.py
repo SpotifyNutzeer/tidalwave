@@ -12,7 +12,13 @@ from tidalwave.models.domain import Scrobble
 
 class RecentTracksSource(Protocol):
     async def get_recent_tracks(
-        self, username: str, *, from_ts: int | None = ..., page: int = ..., limit: int = ...
+        self,
+        username: str,
+        *,
+        from_ts: int | None = ...,
+        page: int = ...,
+        limit: int = ...,
+        session_key: str | None = ...,
     ) -> RecentTracksPage: ...
 
 
@@ -36,7 +42,12 @@ async def _collect_and_store(
     page = 1
     total_pages = 1
     while page <= total_pages:
-        result = await client.get_recent_tracks(user.lastfm_username, from_ts=from_ts, page=page)
+        result = await client.get_recent_tracks(
+            user.lastfm_username,
+            from_ts=from_ts,
+            page=page,
+            session_key=user.lastfm_session_key,
+        )
         total_pages = result.total_pages
         collected.extend(result.scrobbles)
         page += 1

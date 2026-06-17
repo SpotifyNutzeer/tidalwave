@@ -67,3 +67,25 @@ async def test_single_track_dict_is_wrapped(client):
     assert track.artist == "Daft Punk"
     assert track.now_playing is False
     assert track.played_at == datetime.fromtimestamp(1700000000, tz=UTC)
+
+
+_EMPTY = {"recenttracks": {"@attr": {"page": "1", "totalPages": "1"}, "track": []}}
+
+
+@respx.mock
+async def test_recent_tracks_authenticated_when_session_key_given(client):
+    route = respx.get("https://ws.audioscrobbler.com/2.0/").respond(json=_EMPTY)
+    await client.get_recent_tracks("alice", session_key="SK", page=1)
+    params = dict(httpx.QueryParams(route.calls.last.request.url.query))
+    assert params["sk"] == "SK"
+    assert "api_sig" in params
+    assert params["user"] == "alice"
+
+
+@respx.mock
+async def test_recent_tracks_unsigned_when_no_session_key(client):
+    route = respx.get("https://ws.audioscrobbler.com/2.0/").respond(json=_EMPTY)
+    await client.get_recent_tracks("alice", page=1)
+    params = dict(httpx.QueryParams(route.calls.last.request.url.query))
+    assert "sk" not in params
+    assert "api_sig" not in params

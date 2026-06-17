@@ -10,7 +10,7 @@ class FakeClient:
     def __init__(self, by_user):
         self.by_user = by_user
 
-    async def get_recent_tracks(self, username, *, from_ts=None, page=1, limit=200):
+    async def get_recent_tracks(self, username, *, from_ts=None, page=1, limit=200, session_key=None):
         if username == "boom":
             raise LastfmError(8, "operation failed")
         return self.by_user[username]

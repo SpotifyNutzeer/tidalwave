@@ -53,9 +53,15 @@ class LastfmClient:
         return session["name"], session["key"]
 
     async def get_recent_tracks(
-        self, username: str, *, from_ts: int | None = None, page: int = 1, limit: int = 200
+        self,
+        username: str,
+        *,
+        from_ts: int | None = None,
+        page: int = 1,
+        limit: int = 200,
+        session_key: str | None = None,
     ) -> RecentTracksPage:
-        params = {
+        params: dict[str, str] = {
             "method": "user.getRecentTracks",
             "user": username,
             "limit": str(limit),
@@ -64,7 +70,11 @@ class LastfmClient:
         }
         if from_ts is not None:
             params["from"] = str(from_ts)
-        data = await self._call(params, signed=False)
+        if session_key is not None:
+            params["sk"] = session_key
+            data = await self._call(params, signed=True)
+        else:
+            data = await self._call(params, signed=False)
         return _parse_recent_tracks(data)
 
 
