@@ -1,4 +1,4 @@
-FROM node:22.12-alpine AS builder
+FROM node:24-alpine AS builder
 WORKDIR /app
 RUN npm install -g corepack@latest && corepack enable
 COPY package.json pnpm-lock.yaml ./
