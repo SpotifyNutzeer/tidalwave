@@ -27,6 +27,55 @@ async def test_stats_returns_own_data(api, db_session):
     assert resp.json()[0] == {"artist": "Daft Punk", "count": 1}
 
 
+async def test_weekday_returns_7_element_list(api, db_session):
+    client, app = api
+    user = await upsert_user_from_session(db_session, "weekday_user", "sk_wd", mode="open", allowlist=[])
+    # 2024-06-17 is a Monday (isodow=1 → index 0)
+    monday = datetime(2024, 6, 17, 10, tzinfo=UTC)
+    await upsert_listens(db_session, user.id, [
+        Scrobble(artist="A", track_title="mon_track", album=None, played_at=monday),
+    ])
+    cookie = SessionCodec("test-secret").encode(user.id)
+    resp = await client.get("/stats/weekday", headers={"Cookie": f"{COOKIE_NAME}={cookie}"})
+    assert resp.status_code == 200
+    data = resp.json()
+    assert len(data) == 7
+    assert data[0] == 1   # Monday bucket
+    assert sum(data) == 1
+
+
+async def test_history_buckets_by_day(api, db_session):
+    client, app = api
+    user = await upsert_user_from_session(db_session, "history_user", "sk_hist", mode="open", allowlist=[])
+    day1 = datetime(2024, 5, 1, 6, tzinfo=UTC)
+    day2 = datetime(2024, 5, 3, 14, tzinfo=UTC)
+    await upsert_listens(db_session, user.id, [
+        Scrobble(artist="B", track_title="h1", album=None, played_at=day1),
+        Scrobble(artist="B", track_title="h2", album=None, played_at=day1),
+        Scrobble(artist="B", track_title="h3", album=None, played_at=day2),
+    ])
+    cookie = SessionCodec("test-secret").encode(user.id)
+    resp = await client.get(
+        "/stats/history?bucket=day", headers={"Cookie": f"{COOKIE_NAME}={cookie}"}
+    )
+    assert resp.status_code == 200
+    data = resp.json()
+    assert len(data) == 2
+    assert data[0]["count"] == 2
+    assert data[1]["count"] == 1
+    assert data[0]["period"] < data[1]["period"]
+
+
+async def test_history_invalid_bucket_returns_422(api, db_session):
+    client, app = api
+    user = await upsert_user_from_session(db_session, "history_422_user", "sk_422", mode="open", allowlist=[])
+    cookie = SessionCodec("test-secret").encode(user.id)
+    resp = await client.get(
+        "/stats/history?bucket=nonsense", headers={"Cookie": f"{COOKIE_NAME}={cookie}"}
+    )
+    assert resp.status_code == 422
+
+
 async def test_summary_since_filters_listens(api, db_session):
     client, app = api
     user = await upsert_user_from_session(db_session, "bob", "sk2", mode="open", allowlist=[])

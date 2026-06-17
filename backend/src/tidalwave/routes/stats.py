@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Literal
 
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -54,6 +55,27 @@ async def clock(
     session: AsyncSession = Depends(get_session),
 ) -> list[int]:
     return await queries.listening_clock(session, user.id, since=since, until=until)
+
+
+@router.get("/weekday")
+async def weekday(
+    since: datetime | None = None,
+    until: datetime | None = None,
+    user: User = Depends(current_user),
+    session: AsyncSession = Depends(get_session),
+) -> list[int]:
+    return await queries.listening_weekday(session, user.id, since=since, until=until)
+
+
+@router.get("/history")
+async def history(
+    bucket: Literal["day", "week", "month"] = "day",
+    since: datetime | None = None,
+    until: datetime | None = None,
+    user: User = Depends(current_user),
+    session: AsyncSession = Depends(get_session),
+) -> list[dict]:
+    return await queries.listens_over_time(session, user.id, bucket=bucket, since=since, until=until)
 
 
 @router.get("/recent")
