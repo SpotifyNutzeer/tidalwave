@@ -11,6 +11,10 @@ from tidalwave.models.db import User
 
 log = logging.getLogger(__name__)
 
+# Last.fm error codes that mean the session key is invalid / revoked.
+# The user must reconnect; keep polling them forever serves no purpose.
+_AUTH_ERROR_CODES = {4, 9}
+
 
 async def poll_all_users(
     session: AsyncSession, client: RecentTracksSource
@@ -23,7 +27,12 @@ async def poll_all_users(
     for user in users:
         try:
             report[user.lastfm_username] = await ingest_user(session, client, user)
-        except LastfmError:
+        except LastfmError as e:
             log.exception("ingest failed for %s", user.lastfm_username)
-            report[user.lastfm_username] = "error"
+            if e.code in _AUTH_ERROR_CODES:
+                user.disconnected = True
+                await session.flush()
+                report[user.lastfm_username] = "disconnected"
+            else:
+                report[user.lastfm_username] = "error"
     return report

@@ -1,18 +1,28 @@
 from datetime import UTC, datetime
 
+from sqlalchemy import select
+
 from tidalwave.auth.service import upsert_user_from_session
 from tidalwave.ingest.poller import poll_all_users
 from tidalwave.lastfm.client import LastfmError, RecentTracksPage
+from tidalwave.models.db import User
 from tidalwave.models.domain import Scrobble
 
 
 class FakeClient:
-    def __init__(self, by_user):
+    """Fake Last.fm client for tests.
+
+    ``by_user`` maps username -> RecentTracksPage to return on success.
+    ``errors`` maps username -> LastfmError to raise instead (optional).
+    """
+
+    def __init__(self, by_user, errors=None):
         self.by_user = by_user
+        self.errors: dict[str, LastfmError] = errors or {}
 
     async def get_recent_tracks(self, username, *, from_ts=None, page=1, limit=200, session_key=None):
-        if username == "boom":
-            raise LastfmError(8, "operation failed")
+        if username in self.errors:
+            raise self.errors[username]
         return self.by_user[username]
 
 
@@ -32,9 +42,48 @@ async def test_poll_processes_every_connected_user_and_isolates_failures(db_sess
     skipped.disconnected = True
     await db_session.flush()
 
-    client = FakeClient({"alice": _page(1000), "carol": _page(1000)})
+    client = FakeClient(
+        {"alice": _page(1000), "carol": _page(1000)},
+        errors={"boom": LastfmError(8, "operation failed")},
+    )
     report = await poll_all_users(db_session, client)
 
     assert report["alice"] == 1
     assert report["boom"] == "error"   # failure isolated, not raised
     assert "carol" not in report        # disconnected users skipped
+
+
+async def test_poll_marks_user_disconnected_on_auth_error(db_session):
+    """Auth errors (codes 4 and 9) must set user.disconnected=True; transient errors must not."""
+    await upsert_user_from_session(db_session, "alice", "sk", mode="open", allowlist=[])
+    boom = await upsert_user_from_session(db_session, "boom", "sk", mode="open", allowlist=[])
+    boom.disconnected = False
+    stale = await upsert_user_from_session(db_session, "stale", "sk", mode="open", allowlist=[])
+    stale.disconnected = False
+    await db_session.flush()
+
+    client = FakeClient(
+        {"alice": _page(1000)},
+        errors={
+            "boom": LastfmError(8, "operation failed"),
+            "stale": LastfmError(9, "Invalid session key"),
+        },
+    )
+    report = await poll_all_users(db_session, client)
+
+    # Success path unchanged
+    assert report["alice"] == 1
+
+    # Transient error: report "error", user stays connected
+    assert report["boom"] == "error"
+    boom_row = (
+        await db_session.execute(select(User).where(User.lastfm_username == "boom"))
+    ).scalar_one()
+    assert boom_row.disconnected is False
+
+    # Auth error: report "disconnected", user is marked disconnected
+    assert report["stale"] == "disconnected"
+    stale_row = (
+        await db_session.execute(select(User).where(User.lastfm_username == "stale"))
+    ).scalar_one()
+    assert stale_row.disconnected is True
