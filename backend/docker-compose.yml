@@ -1,0 +1,9 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: tidalwave
+      POSTGRES_PASSWORD: tidalwave
+      POSTGRES_DB: tidalwave
+    ports:
+      - "5432:5432"
