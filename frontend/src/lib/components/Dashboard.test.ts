@@ -11,7 +11,7 @@ describe('Dashboard', () => {
     // Empty trend → charts show no y-axis numbers, so the stat-card values below stay unique.
     vi.spyOn(api, 'metricsOverTime').mockResolvedValue([]);
     vi.spyOn(api, 'topArtists').mockResolvedValue([{ artist: 'Daft Punk', count: 10 }]);
-    vi.spyOn(api, 'topTracks').mockResolvedValue([{ track: 'Aerodynamic', count: 6 }]);
+    vi.spyOn(api, 'topTracks').mockResolvedValue([{ track: 'Aerodynamic', artist: 'Daft Punk', count: 6 }]);
     vi.spyOn(api, 'topAlbums').mockResolvedValue([{ album: 'Discovery', count: 8 }]);
     vi.spyOn(api, 'clock').mockResolvedValue(new Array(24).fill(0));
     vi.spyOn(api, 'weekday').mockResolvedValue(new Array(7).fill(0));

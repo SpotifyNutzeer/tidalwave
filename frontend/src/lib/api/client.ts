@@ -14,7 +14,7 @@ async function get<T>(path: string): Promise<T> {
 
 export interface UserInfo { username: string; is_admin: boolean; }
 export interface ArtistCount { artist: string; count: number; }
-export interface TrackCount { track: string; count: number; }
+export interface TrackCount { track: string; artist: string; count: number; }
 export interface AlbumCount { album: string; count: number; }
 export interface HistoryPoint { period: string; count: number; }
 export interface MetricPoint { period: string; listens: number; artists: number; albums: number; seconds: number; }

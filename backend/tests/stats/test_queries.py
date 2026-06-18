@@ -10,6 +10,7 @@ from tidalwave.stats.queries import (
     metrics_over_time,
     summary_stats,
     top_artists,
+    top_tracks,
     total_listens,
 )
 
@@ -35,6 +36,15 @@ async def test_top_artists_ranks_by_count(db_session):
     rows = await top_artists(db_session, user.id, limit=10)
     assert rows[0] == {"artist": "Daft Punk", "count": 2}
     assert rows[1] == {"artist": "Kavinsky", "count": 1}
+
+
+async def test_top_tracks_includes_artist(db_session):
+    user = await _seed(db_session)
+    rows = await top_tracks(db_session, user.id, limit=10)
+    # Each track row carries its artist so the UI can build platform links.
+    assert {"track", "artist", "count"} == set(rows[0].keys())
+    assert {"Daft Punk"} == {r["artist"] for r in rows if r["track"] in {"a", "b"}}
+    assert all(r["count"] == 1 for r in rows)
 
 
 async def test_total_listens(db_session):

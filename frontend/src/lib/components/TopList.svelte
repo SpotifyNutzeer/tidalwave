@@ -1,6 +1,9 @@
 <script lang="ts">
+  import PlatformLinks from './PlatformLinks.svelte';
+
+  type Item = { label: string; count: number; query?: string };
   let { title, items, initial = 5, href }:
-    { title: string; items: { label: string; count: number }[]; initial?: number; href?: string } =
+    { title: string; items: Item[]; initial?: number; href?: string } =
     $props();
   const max = $derived(items.reduce((m, i) => Math.max(m, i.count), 0) || 1);
 
@@ -22,6 +25,9 @@
           <span class="bar" class:top={i === 0} style="width: {(item.count / max) * 100}%"></span>
           <span class="rank">{i + 1}</span>
           <span class="label">{item.label}</span>
+          {#if item.query}
+            <span class="links"><PlatformLinks query={item.query} /></span>
+          {/if}
           <span class="count">{item.count}</span>
         </li>
       {/each}
@@ -104,6 +110,20 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+  .links {
+    z-index: 1;
+    display: inline-flex;
+    opacity: 0;
+    transition: opacity var(--dur-fast) var(--ease-out);
+  }
+  li:hover .links,
+  li:focus-within .links {
+    opacity: 1;
+  }
+  /* Touch devices have no hover — always show the platform links there. */
+  @media (hover: none) {
+    .links { opacity: 1; }
   }
   .count {
     z-index: 1;

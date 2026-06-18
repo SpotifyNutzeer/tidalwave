@@ -23,11 +23,12 @@
     total_listens: 0, distinct_artists: 0, distinct_tracks: 0, distinct_albums: 0, total_seconds: 0
   };
 
+  type ListItem = { label: string; count: number; query?: string };
   let summary = $state<Summary>(EMPTY);
   let metrics = $state<MetricPoint[]>([]);
-  let artists = $state<{ label: string; count: number }[]>([]);
-  let tracks = $state<{ label: string; count: number }[]>([]);
-  let albums = $state<{ label: string; count: number }[]>([]);
+  let artists = $state<ListItem[]>([]);
+  let tracks = $state<ListItem[]>([]);
+  let albums = $state<ListItem[]>([]);
   let hours = $state<number[]>(new Array(24).fill(0));
   let days = $state<number[]>(new Array(7).fill(0));
   let recent = $state<RecentItem[]>([]);
@@ -41,9 +42,11 @@
   ) {
     summary = s;
     metrics = m;
-    artists = ar.map((x) => ({ label: x.artist, count: x.count }));
-    tracks = tr.map((x) => ({ label: x.track, count: x.count }));
-    albums = al.map((x) => ({ label: x.album ?? 'Unknown album', count: x.count }));
+    artists = ar.map((x) => ({ label: x.artist, count: x.count, query: x.artist }));
+    tracks = tr.map((x) => ({ label: x.track, count: x.count, query: `${x.artist} ${x.track}` }));
+    albums = al.map((x) => ({
+      label: x.album ?? 'Unknown album', count: x.count, query: x.album ?? undefined
+    }));
     hours = cl; days = wd; recent = rc;
   }
 

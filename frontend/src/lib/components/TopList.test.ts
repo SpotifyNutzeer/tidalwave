@@ -17,4 +17,24 @@ describe('TopList', () => {
     render(TopList, { props: { title: 'Top Artists', items: [] } });
     expect(screen.getByText(/no data/i)).toBeInTheDocument();
   });
+
+  it('renders platform search links for items with a query', () => {
+    render(TopList, { props: { title: 'Top Tracks', items: [
+      { label: 'Around the World', count: 5, query: 'Daft Punk Around the World' }
+    ] } });
+    const spotify = screen.getByRole('link', { name: /spotify/i });
+    expect(spotify).toHaveAttribute(
+      'href',
+      'https://open.spotify.com/search/Daft%20Punk%20Around%20the%20World'
+    );
+    // All four linkhop platforms are offered.
+    expect(screen.getAllByRole('link')).toHaveLength(4);
+  });
+
+  it('omits platform links when an item has no query', () => {
+    render(TopList, { props: { title: 'Top Artists', items: [
+      { label: 'Daft Punk', count: 10 }
+    ] } });
+    expect(screen.queryByRole('link')).toBeNull();
+  });
 });

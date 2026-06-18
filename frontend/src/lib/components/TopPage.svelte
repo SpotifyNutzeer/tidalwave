@@ -12,7 +12,7 @@
   const TITLES = { artists: 'Top Artists', tracks: 'Top Tracks', albums: 'Top Albums' };
   const TRENDS = { artists: 'Artists over time', tracks: 'Listens over time', albums: 'Albums over time' };
 
-  let items = $state<{ label: string; count: number }[]>([]);
+  let items = $state<{ label: string; count: number; query?: string }[]>([]);
   let metrics = $state<MetricPoint[]>([]);
   let error = $state(false);
 
@@ -26,21 +26,21 @@
         if (token != null) {
           const metricsPromise = api.shared.metricsOverTime(token, bucket);
           if (k === 'artists') {
-            items = (await api.shared.topArtists(token, 100)).map((r) => ({ label: r.artist, count: r.count }));
+            items = (await api.shared.topArtists(token, 100)).map((r) => ({ label: r.artist, count: r.count, query: r.artist }));
           } else if (k === 'tracks') {
-            items = (await api.shared.topTracks(token, 100)).map((r) => ({ label: r.track, count: r.count }));
+            items = (await api.shared.topTracks(token, 100)).map((r) => ({ label: r.track, count: r.count, query: `${r.artist} ${r.track}` }));
           } else {
-            items = (await api.shared.topAlbums(token, 100)).map((r) => ({ label: r.album ?? 'Unknown album', count: r.count }));
+            items = (await api.shared.topAlbums(token, 100)).map((r) => ({ label: r.album ?? 'Unknown album', count: r.count, query: r.album ?? undefined }));
           }
           metrics = await metricsPromise;
         } else {
           const metricsPromise = api.metricsOverTime(bucket, params);
           if (k === 'artists') {
-            items = (await api.topArtists(100, params)).map((r) => ({ label: r.artist, count: r.count }));
+            items = (await api.topArtists(100, params)).map((r) => ({ label: r.artist, count: r.count, query: r.artist }));
           } else if (k === 'tracks') {
-            items = (await api.topTracks(100, params)).map((r) => ({ label: r.track, count: r.count }));
+            items = (await api.topTracks(100, params)).map((r) => ({ label: r.track, count: r.count, query: `${r.artist} ${r.track}` }));
           } else {
-            items = (await api.topAlbums(100, params)).map((r) => ({ label: r.album ?? 'Unknown album', count: r.count }));
+            items = (await api.topAlbums(100, params)).map((r) => ({ label: r.album ?? 'Unknown album', count: r.count, query: r.album ?? undefined }));
           }
           metrics = await metricsPromise;
         }

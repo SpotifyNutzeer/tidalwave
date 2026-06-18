@@ -17,13 +17,23 @@ def _scope(stmt, user_id: int, since: datetime | None, until: datetime | None):
     return stmt
 
 
-async def _top(session, user_id, column, label, *, limit, since, until):
-    stmt = _scope(
-        select(column.label(label), func.count().label("count")), user_id, since, until
-    ).group_by(column).order_by(func.count().desc(), column.asc()).limit(limit)
-    return [
-        {label: row[0], "count": row[1]} for row in (await session.execute(stmt)).all()
-    ]
+async def _top(session, user_id, column, label, *, limit, since, until, extra=None):
+    """Top-N by listen count. ``extra`` is an optional ``(column, label)`` pair
+    that is added to the GROUP BY and returned alongside each row — used so a
+    track row also carries its artist (lets the UI build a precise search link)."""
+    cols = [column.label(label), func.count().label("count")]
+    groups = [column]
+    if extra is not None:
+        extra_col, extra_label = extra
+        cols.insert(1, extra_col.label(extra_label))
+        groups.insert(0, extra_col)
+    stmt = _scope(select(*cols), user_id, since, until).group_by(*groups).order_by(
+        func.count().desc(), column.asc()
+    ).limit(limit)
+    rows = (await session.execute(stmt)).all()
+    if extra is None:
+        return [{label: row[0], "count": row[1]} for row in rows]
+    return [{label: row[0], extra[1]: row[1], "count": row[2]} for row in rows]
 
 
 async def top_artists(session: AsyncSession, user_id: int, *, limit: int = 20,
@@ -34,8 +44,11 @@ async def top_artists(session: AsyncSession, user_id: int, *, limit: int = 20,
 
 async def top_tracks(session: AsyncSession, user_id: int, *, limit: int = 20,
                      since=None, until=None) -> list[dict]:
+    # Group by (artist, track_title) so identically-titled songs by different
+    # artists stay distinct and each row carries its artist.
     return await _top(session, user_id, Listen.track_title, "track",
-                      limit=limit, since=since, until=until)
+                      limit=limit, since=since, until=until,
+                      extra=(Listen.artist, "artist"))
 
 
 async def top_albums(session: AsyncSession, user_id: int, *, limit: int = 20,
