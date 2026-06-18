@@ -53,7 +53,7 @@
 {#if error}
   <p class="centered">This shared link was not found or has been revoked.</p>
 {:else}
-  <div class="grid">
+  <div class="dashboard">
     <SummaryCard {total} />
     <HistoryChart points={history} {bucket} onBucketChange={loadHistory} />
     <TopList title="Top Artists" items={artists} />
@@ -66,6 +66,11 @@
 {/if}
 
 <style>
-  .centered { text-align: center; padding: 4rem 1.5rem; color: var(--subtext); }
-  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; padding: 1.5rem; }
+  .centered {
+    max-width: 1180px;
+    margin: 0 auto;
+    text-align: center;
+    padding: 4rem 1.5rem;
+    color: var(--text-muted);
+  }
 </style>

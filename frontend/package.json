@@ -36,6 +36,7 @@
     "vitest": "^3.2.6"
   },
   "dependencies": {
+    "@fontsource/instrument-serif": "^5.2.8",
     "layerchart": "^1.0.0"
   },
   "pnpm": {
