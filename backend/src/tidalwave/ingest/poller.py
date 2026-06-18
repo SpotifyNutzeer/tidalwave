@@ -16,6 +16,25 @@ log = logging.getLogger(__name__)
 _AUTH_ERROR_CODES = {4, 9}
 
 
+async def ingest_one_user(
+    session: AsyncSession, client: RecentTracksSource, user: User
+) -> int | str:
+    """Ingest one user. Returns inserted count, or "disconnected"/"error".
+
+    Auth errors (codes 4/9) flip user.disconnected; transient errors are logged.
+    Does not commit — the caller owns the transaction.
+    """
+    try:
+        return await ingest_user(session, client, user)
+    except LastfmError as e:
+        log.exception("ingest failed for %s", user.lastfm_username)
+        if e.code in _AUTH_ERROR_CODES:
+            user.disconnected = True
+            await session.flush()
+            return "disconnected"
+        return "error"
+
+
 async def poll_all_users(
     session: AsyncSession, client: RecentTracksSource
 ) -> dict[str, int | str]:
@@ -25,14 +44,5 @@ async def poll_all_users(
     ).scalars().all()
     report: dict[str, int | str] = {}
     for user in users:
-        try:
-            report[user.lastfm_username] = await ingest_user(session, client, user)
-        except LastfmError as e:
-            log.exception("ingest failed for %s", user.lastfm_username)
-            if e.code in _AUTH_ERROR_CODES:
-                user.disconnected = True
-                await session.flush()
-                report[user.lastfm_username] = "disconnected"
-            else:
-                report[user.lastfm_username] = "error"
+        report[user.lastfm_username] = await ingest_one_user(session, client, user)
     return report

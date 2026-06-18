@@ -87,3 +87,26 @@ async def test_poll_marks_user_disconnected_on_auth_error(db_session):
         await db_session.execute(select(User).where(User.lastfm_username == "stale"))
     ).scalar_one()
     assert stale_row.disconnected is True
+
+
+async def test_ingest_one_user_disconnects_on_auth_error(db_session):
+    from tidalwave.ingest.poller import ingest_one_user
+
+    user = await upsert_user_from_session(db_session, "alice", "sk", mode="open", allowlist=[])
+    await db_session.flush()
+
+    client = FakeClient({}, errors={"alice": LastfmError(9, "Invalid session key")})
+    result = await ingest_one_user(db_session, client, user)
+
+    assert result == "disconnected"
+    assert user.disconnected is True
+
+
+async def test_ingest_one_user_returns_inserted_count(db_session):
+    from tidalwave.ingest.poller import ingest_one_user
+
+    user = await upsert_user_from_session(db_session, "bob", "sk", mode="open", allowlist=[])
+    await db_session.flush()
+
+    result = await ingest_one_user(db_session, FakeClient({"bob": _page(1000)}), user)
+    assert result == 1
