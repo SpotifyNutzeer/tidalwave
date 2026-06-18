@@ -29,11 +29,17 @@ async def ingest_one_user(
     try:
         return await ingest_user(session, client, user)
     except LastfmError as e:
-        log.exception("ingest failed for %s", user.lastfm_username)
         if e.code in _AUTH_ERROR_CODES:
+            # Expected operational state (user revoked their session key) —
+            # warn without a stack trace, then stop polling them.
+            log.warning(
+                "disconnecting %s: Last.fm auth error %s (%s)",
+                user.lastfm_username, e.code, e,
+            )
             user.disconnected = True
             await session.flush()
             return "disconnected"
+        log.exception("ingest failed for %s", user.lastfm_username)
         return "error"
 
 

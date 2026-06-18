@@ -110,3 +110,42 @@ async def test_ingest_one_user_returns_inserted_count(db_session):
 
     result = await ingest_one_user(db_session, FakeClient({"bob": _page(1000)}), user)
     assert result == 1
+
+
+async def test_ingest_one_user_logs_auth_error_as_warning_without_traceback(db_session, caplog):
+    """Auth errors (codes 4/9) are a normal 'session revoked' state — log at
+    WARNING without a stack trace, not log.exception."""
+    import logging
+
+    from tidalwave.ingest.poller import ingest_one_user
+
+    user = await upsert_user_from_session(db_session, "alice", "sk", mode="open", allowlist=[])
+    await db_session.flush()
+
+    client = FakeClient({}, errors={"alice": LastfmError(9, "Invalid session key")})
+    with caplog.at_level(logging.INFO, logger="tidalwave.ingest.poller"):
+        result = await ingest_one_user(db_session, client, user)
+
+    assert result == "disconnected"
+    rec = next(r for r in caplog.records if r.name == "tidalwave.ingest.poller")
+    assert rec.levelno == logging.WARNING
+    assert rec.exc_info is None  # no traceback for an expected disconnect
+
+
+async def test_ingest_one_user_logs_transient_error_with_traceback(db_session, caplog):
+    """Transient/unexpected Last.fm errors keep the full traceback (log.exception)."""
+    import logging
+
+    from tidalwave.ingest.poller import ingest_one_user
+
+    user = await upsert_user_from_session(db_session, "bob", "sk", mode="open", allowlist=[])
+    await db_session.flush()
+
+    client = FakeClient({}, errors={"bob": LastfmError(8, "operation failed")})
+    with caplog.at_level(logging.INFO, logger="tidalwave.ingest.poller"):
+        result = await ingest_one_user(db_session, client, user)
+
+    assert result == "error"
+    rec = next(r for r in caplog.records if r.name == "tidalwave.ingest.poller")
+    assert rec.levelno == logging.ERROR
+    assert rec.exc_info is not None  # traceback retained for unexpected errors
