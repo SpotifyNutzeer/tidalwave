@@ -9,10 +9,15 @@ from sqlalchemy import select
 
 from tidalwave.config import Settings
 from tidalwave.db import make_engine, make_session_factory, session_scope
+from tidalwave.ingest.durations import fill_missing_durations
 from tidalwave.ingest.poller import poll_all_users
 from tidalwave.ingest.service import backfill_user
 from tidalwave.lastfm.client import LastfmClient
 from tidalwave.models.db import User
+
+# Per poll run, resolve at most this many new track durations so the 5-minute
+# job stays bounded. Historical gaps are filled by `tidalwave-backfill-durations`.
+_POLL_DURATION_BUDGET = 50
 
 
 def _client(http: httpx.AsyncClient, settings: Settings) -> LastfmClient:
@@ -24,9 +29,14 @@ async def _poll() -> None:
     logging.basicConfig(level=settings.log_level)
     factory = make_session_factory(make_engine(settings))
     async with httpx.AsyncClient(timeout=15.0) as http, session_scope(factory) as session:
-        report = await poll_all_users(session, _client(http, settings))
+        client = _client(http, settings)
+        report = await poll_all_users(session, client)
+        filled = await fill_missing_durations(session, client, max_tracks=_POLL_DURATION_BUDGET)
         await session.commit()
-        logging.getLogger("tidalwave").info("poll report: %s", report)
+        log = logging.getLogger("tidalwave")
+        log.info("poll report: %s", report)
+        if filled:
+            log.info("resolved durations for %s listens", filled)
 
 
 async def _backfill(username: str) -> None:
@@ -41,6 +51,22 @@ async def _backfill(username: str) -> None:
         logging.getLogger("tidalwave").info("backfilled %s listens for %s", inserted, username)
 
 
+async def _backfill_durations(username: str | None) -> None:
+    settings = Settings()
+    logging.basicConfig(level=settings.log_level)
+    factory = make_session_factory(make_engine(settings))
+    async with httpx.AsyncClient(timeout=15.0) as http, session_scope(factory) as session:
+        user_id: int | None = None
+        if username is not None:
+            user = (
+                await session.execute(select(User).where(User.lastfm_username == username))
+            ).scalar_one()
+            user_id = user.id
+        filled = await fill_missing_durations(session, _client(http, settings), user_id=user_id)
+        await session.commit()
+        logging.getLogger("tidalwave").info("resolved durations for %s listens", filled)
+
+
 def poll() -> None:
     asyncio.run(_poll())
 
@@ -50,3 +76,12 @@ def backfill() -> None:
     parser.add_argument("username")
     args = parser.parse_args()
     asyncio.run(_backfill(args.username))
+
+
+def backfill_durations() -> None:
+    parser = argparse.ArgumentParser(
+        description="Resolve missing track durations from Last.fm (all users, or one)."
+    )
+    parser.add_argument("username", nargs="?", default=None)
+    args = parser.parse_args()
+    asyncio.run(_backfill_durations(args.username))

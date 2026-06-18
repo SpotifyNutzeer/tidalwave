@@ -77,6 +77,25 @@ class LastfmClient:
             data = await self._call(params, signed=False)
         return _parse_recent_tracks(data)
 
+    async def get_track_info(self, artist: str, track: str) -> int | None:
+        """Return the track length in whole seconds, or None if Last.fm has none.
+
+        Uses the public (unsigned) track.getInfo method. Last.fm reports the
+        duration in milliseconds and uses "0" for tracks it has no length for.
+        """
+        data = await self._call(
+            {"method": "track.getInfo", "artist": artist, "track": track},
+            signed=False,
+        )
+        raw = data.get("track", {}).get("duration")
+        if raw is None:
+            return None
+        try:
+            ms = int(raw)
+        except (TypeError, ValueError):
+            return None
+        return ms // 1000 if ms > 0 else None
+
 
 def _parse_recent_tracks(data: dict) -> RecentTracksPage:
     block = data["recenttracks"]

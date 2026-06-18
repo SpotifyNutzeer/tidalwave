@@ -1,14 +1,15 @@
-import { render, screen, waitFor } from '@testing-library/svelte';
-import { describe, it, expect, vi } from 'vitest';
-import Page from './+page.svelte';
-import { api } from '$lib/api/client';
+import { render, screen } from '@testing-library/svelte';
+import { describe, it, expect } from 'vitest';
+import Landing from '$lib/components/Landing.svelte';
 
-describe('home page', () => {
-  it('renders the landing page when logged out', async () => {
-    vi.spyOn(api, 'me').mockResolvedValue(null);
-    render(Page);
-    await waitFor(() =>
-      expect(screen.getByRole('heading', { name: /your tidal listening/i })).toBeInTheDocument()
-    );
+describe('landing', () => {
+  it('shows the headline and the connect CTA when logged out', () => {
+    render(Landing);
+    expect(
+      screen.getByRole('heading', { name: /your tidal listening/i })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', { name: /connect with last\.fm/i })
+    ).toBeInTheDocument();
   });
 });

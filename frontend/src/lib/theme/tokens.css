@@ -172,7 +172,8 @@ body::before {
     radial-gradient(48vmax 48vmax at 84% 14%, rgba(var(--blob-b), 0.24), transparent 62%),
     radial-gradient(54vmax 54vmax at 62% 96%, rgba(var(--blob-c), 0.28), transparent 64%);
   filter: blur(72px) saturate(115%);
-  animation: drift 60s ease-in-out infinite alternate;
+  /* Static on purpose: an animated full-viewport blur forces every
+     backdrop-filter card to recompute each frame, pinning the GPU. */
 }
 
 :root[data-theme='latte'] body::before {
@@ -188,15 +189,6 @@ body::after {
 :root[data-theme='latte'] body::after {
   opacity: 0.06;
   mix-blend-mode: multiply;
-}
-
-@keyframes drift {
-  0%   { transform: translate3d(0, 0, 0); }
-  100% { transform: translate3d(-2vmax, 2vmax, 0); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  body::before { animation: none; }
 }
 
 :focus-visible {
@@ -250,6 +242,12 @@ h1, h2, h3 {
 .dashboard .charts {
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
 }
+.dashboard .stats {
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+.dashboard .trends {
+  grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+}
 
 .eyebrow {
   font-family: var(--font-mono);
@@ -259,44 +257,8 @@ h1, h2, h3 {
   color: var(--text-dim);
 }
 
-/* Charts (layerchart) — fold into the aquatic palette. Plain global rules:
-   axis/grid <line>s use the glass border, axis labels the dim text colour.
-   Bar <rect>s and the area <path> keep the accent passed via component props. */
-.chart {
-  height: 200px;
-}
-.chart text {
-  fill: var(--text-dim);
-  font-family: var(--font-mono);
-  font-size: 0.66rem;
-}
-.chart line {
-  stroke: var(--glass-border);
-}
-/* layerchart marks use Tailwind utility classes (fill-none, fill-surface-*,
-   etc.) that don't exist in this non-Tailwind project, so they fall back to a
-   black fill. Map the few the charts rely on to our tokens. */
-.chart .fill-none,
-.chart .path-line {
-  fill: none;
-}
-.chart .fill-surface-content,
-.chart .fill-surface-100,
-.chart .fill-surface-200 {
-  fill: transparent;
-}
-.chart .stroke-surface-content {
-  stroke: var(--glass-border);
-}
-.chart .fill-transparent {
-  fill: transparent;
-}
-.chart .path-area {
-  fill: var(--accent);
-  fill-opacity: 0.16;
-}
-
-/* Pure-CSS bar charts (hour-of-day, weekday) — no chart lib, full control.
+/* Pure-CSS / pure-SVG charts (over-time area, hour-of-day, weekday) — no chart
+   lib, full control.
    .plot lays a numeric y-axis beside the bars; .plot-main stacks the bars and
    their x-labels so both align under the same column. */
 .plot {

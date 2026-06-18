@@ -5,7 +5,9 @@ import { api } from '$lib/api/client';
 
 describe('shared dashboard page', () => {
   it('renders shared stats for a valid token', async () => {
-    vi.spyOn(api.shared, 'summary').mockResolvedValue({ total_listens: 7 });
+    vi.spyOn(api.shared, 'summary').mockResolvedValue({
+      total_listens: 7, distinct_artists: 1, distinct_tracks: 1, distinct_albums: 0, total_seconds: 0
+    });
     vi.spyOn(api.shared, 'topArtists').mockResolvedValue([{ artist: 'Kavinsky', count: 3 }]);
     vi.spyOn(api.shared, 'topTracks').mockResolvedValue([]);
     vi.spyOn(api.shared, 'topAlbums').mockResolvedValue([]);

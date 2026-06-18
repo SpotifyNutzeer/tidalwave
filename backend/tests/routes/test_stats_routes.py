@@ -94,4 +94,8 @@ async def test_summary_since_filters_listens(api, db_session):
         headers={"Cookie": f"{COOKIE_NAME}={cookie}"},
     )
     assert resp.status_code == 200
-    assert resp.json() == {"total_listens": 2}
+    body = resp.json()
+    assert body["total_listens"] == 2
+    assert body["distinct_artists"] == 2  # Artist A + Artist B in the window
+    assert body["distinct_tracks"] == 2
+    assert body["total_seconds"] == 0  # no durations resolved in this test

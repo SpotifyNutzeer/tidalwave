@@ -1,0 +1,42 @@
+<script lang="ts">
+  import { page } from '$app/stores';
+
+  const links = [
+    { href: '/', label: 'Overview' },
+    { href: '/artists', label: 'Artists' },
+    { href: '/tracks', label: 'Tracks' },
+    { href: '/albums', label: 'Albums' }
+  ];
+</script>
+
+<nav aria-label="Sections">
+  {#each links as link (link.href)}
+    <a href={link.href} aria-current={$page.url.pathname === link.href ? 'page' : undefined}>
+      {link.label}
+    </a>
+  {/each}
+</nav>
+
+<style>
+  nav {
+    display: flex;
+    gap: 0.25rem;
+    align-items: center;
+  }
+  a {
+    padding: 0.32rem 0.7rem;
+    border-radius: var(--r-pill);
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    text-decoration: none;
+    white-space: nowrap;
+    transition: color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
+  }
+  a:hover {
+    color: var(--text);
+  }
+  a[aria-current='page'] {
+    color: var(--text);
+    background: var(--glass-bg-strong);
+  }
+</style>

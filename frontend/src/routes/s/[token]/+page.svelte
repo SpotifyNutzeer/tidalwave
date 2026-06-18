@@ -5,7 +5,7 @@
   import TopList from '$lib/components/TopList.svelte';
   import ListeningClock from '$lib/components/ListeningClock.svelte';
   import WeekdayChart from '$lib/components/WeekdayChart.svelte';
-  import HistoryChart from '$lib/components/HistoryChart.svelte';
+  import AreaTrend from '$lib/components/AreaTrend.svelte';
   import RecentList from '$lib/components/RecentList.svelte';
 
   let { data }: { data: { token: string } } = $props();
@@ -55,7 +55,12 @@
 {:else}
   <div class="dashboard">
     <SummaryCard {total} />
-    <HistoryChart points={history} {bucket} onBucketChange={loadHistory} />
+    <AreaTrend
+      title="Over time"
+      points={history.map((h) => ({ period: h.period, value: h.count }))}
+      {bucket}
+      onBucketChange={loadHistory}
+    />
     <div class="row tops">
       <TopList title="Top Artists" items={artists} />
       <TopList title="Top Tracks" items={tracks} />

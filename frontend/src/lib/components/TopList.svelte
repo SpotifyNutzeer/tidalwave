@@ -1,6 +1,7 @@
 <script lang="ts">
-  let { title, items, initial = 5 }:
-    { title: string; items: { label: string; count: number }[]; initial?: number } = $props();
+  let { title, items, initial = 5, href }:
+    { title: string; items: { label: string; count: number }[]; initial?: number; href?: string } =
+    $props();
   const max = $derived(items.reduce((m, i) => Math.max(m, i.count), 0) || 1);
 
   let expanded = $state(false);
@@ -8,7 +9,10 @@
 </script>
 
 <section class="glass">
-  <h2>{title}</h2>
+  <div class="head">
+    <h2>{title}</h2>
+    {#if href}<a class="all" {href}>View all →</a>{/if}
+  </div>
   {#if items.length === 0}
     <p class="empty">No data yet.</p>
   {:else}
@@ -22,7 +26,7 @@
         </li>
       {/each}
     </ol>
-    {#if items.length > initial}
+    {#if !href && items.length > initial}
       <button class="more" onclick={() => (expanded = !expanded)}>
         {expanded ? 'Show less' : `Show ${items.length - initial} more`}
       </button>
@@ -34,10 +38,28 @@
   section {
     padding: 1.4rem 1.5rem;
   }
+  .head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    margin: 0 0 1rem;
+  }
   h2 {
     font-size: 1.35rem;
     color: var(--text);
-    margin: 0 0 1rem;
+    margin: 0;
+  }
+  .all {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    text-decoration: none;
+    white-space: nowrap;
+    transition: color var(--dur-fast) var(--ease-out);
+  }
+  .all:hover {
+    color: var(--accent);
   }
   ol {
     list-style: none;

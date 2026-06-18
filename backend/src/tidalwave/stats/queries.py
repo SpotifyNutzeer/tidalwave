@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import Integer, cast, func, select
+from sqlalchemy import Integer, cast, distinct, func, select, tuple_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from tidalwave.models.db import Listen
@@ -47,6 +47,60 @@ async def top_albums(session: AsyncSession, user_id: int, *, limit: int = 20,
 async def total_listens(session: AsyncSession, user_id: int, *, since=None, until=None) -> int:
     stmt = _scope(select(func.count()).select_from(Listen), user_id, since, until)
     return (await session.execute(stmt)).scalar_one()
+
+
+async def summary_stats(session: AsyncSession, user_id: int, *, since=None, until=None) -> dict:
+    """Headline totals for the overview: listens, distinct artists/tracks/albums
+    and total seconds listened (summed from resolved track durations)."""
+    stmt = _scope(
+        select(
+            func.count().label("total_listens"),
+            func.count(distinct(Listen.artist)).label("distinct_artists"),
+            func.count(distinct(tuple_(Listen.artist, Listen.track_title))).label("distinct_tracks"),
+            func.count(distinct(Listen.album)).label("distinct_albums"),
+            func.coalesce(func.sum(Listen.duration_sec), 0).label("total_seconds"),
+        ),
+        user_id, since, until,
+    )
+    row = (await session.execute(stmt)).one()
+    return {
+        "total_listens": int(row.total_listens),
+        "distinct_artists": int(row.distinct_artists),
+        "distinct_tracks": int(row.distinct_tracks),
+        "distinct_albums": int(row.distinct_albums),
+        "total_seconds": int(row.total_seconds),
+    }
+
+
+async def metrics_over_time(session: AsyncSession, user_id: int, *, bucket: str = "day",
+                            since=None, until=None) -> list[dict]:
+    """Per-period listens, distinct artists/albums and seconds — drives the
+    over-time graphs. Returns chronological rows keyed by ISO period."""
+    period = func.date_trunc(bucket, func.timezone("UTC", Listen.played_at))
+    stmt = (
+        _scope(
+            select(
+                period.label("period"),
+                func.count().label("listens"),
+                func.count(distinct(Listen.artist)).label("artists"),
+                func.count(distinct(Listen.album)).label("albums"),
+                func.coalesce(func.sum(Listen.duration_sec), 0).label("seconds"),
+            ),
+            user_id, since, until,
+        )
+        .group_by(period)
+        .order_by(period.asc())
+    )
+    return [
+        {
+            "period": row.period.isoformat(),
+            "listens": int(row.listens),
+            "artists": int(row.artists),
+            "albums": int(row.albums),
+            "seconds": int(row.seconds),
+        }
+        for row in (await session.execute(stmt)).all()
+    ]
 
 
 async def listening_clock(session: AsyncSession, user_id: int, *,

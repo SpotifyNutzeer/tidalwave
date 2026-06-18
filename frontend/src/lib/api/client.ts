@@ -17,10 +17,23 @@ export interface ArtistCount { artist: string; count: number; }
 export interface TrackCount { track: string; count: number; }
 export interface AlbumCount { album: string; count: number; }
 export interface HistoryPoint { period: string; count: number; }
+export interface MetricPoint { period: string; listens: number; artists: number; albums: number; seconds: number; }
 export interface RecentItem { track: string; artist: string; album: string | null; played_at: string; }
+export interface Summary {
+  total_listens: number;
+  distinct_artists: number;
+  distinct_tracks: number;
+  distinct_albums: number;
+  total_seconds: number;
+}
 export type Bucket = 'day' | 'week' | 'month';
+export interface RangeParams { since?: string; until?: string; }
 
-const q = (limit?: number) => (limit == null ? '' : `?limit=${limit}`);
+function qs(params: Record<string, string | number | undefined>): string {
+  const entries = Object.entries(params).filter(([, v]) => v != null && v !== '');
+  if (entries.length === 0) return '';
+  return '?' + entries.map(([k, v]) => `${k}=${encodeURIComponent(String(v))}`).join('&');
+}
 
 export const api = {
   loginUrl: () => '/auth/login',
@@ -32,14 +45,20 @@ export const api = {
     return (await res.json()) as UserInfo;
   },
 
-  summary: () => get<{ total_listens: number }>('/stats/summary'),
-  topArtists: (limit?: number) => get<ArtistCount[]>(`/stats/top-artists${q(limit)}`),
-  topTracks: (limit?: number) => get<TrackCount[]>(`/stats/top-tracks${q(limit)}`),
-  topAlbums: (limit?: number) => get<AlbumCount[]>(`/stats/top-albums${q(limit)}`),
-  clock: () => get<number[]>('/stats/clock'),
-  weekday: () => get<number[]>('/stats/weekday'),
-  history: (bucket: Bucket = 'day') => get<HistoryPoint[]>(`/stats/history?bucket=${bucket}`),
-  recent: (limit?: number) => get<RecentItem[]>(`/stats/recent${q(limit)}`),
+  summary: (p?: RangeParams) => get<Summary>(`/stats/summary${qs({ ...p })}`),
+  topArtists: (limit?: number, p?: RangeParams) =>
+    get<ArtistCount[]>(`/stats/top-artists${qs({ limit, ...p })}`),
+  topTracks: (limit?: number, p?: RangeParams) =>
+    get<TrackCount[]>(`/stats/top-tracks${qs({ limit, ...p })}`),
+  topAlbums: (limit?: number, p?: RangeParams) =>
+    get<AlbumCount[]>(`/stats/top-albums${qs({ limit, ...p })}`),
+  clock: (p?: RangeParams) => get<number[]>(`/stats/clock${qs({ ...p })}`),
+  weekday: (p?: RangeParams) => get<number[]>(`/stats/weekday${qs({ ...p })}`),
+  history: (bucket: Bucket = 'day', p?: RangeParams) =>
+    get<HistoryPoint[]>(`/stats/history${qs({ bucket, ...p })}`),
+  metricsOverTime: (bucket: Bucket = 'day', p?: RangeParams) =>
+    get<MetricPoint[]>(`/stats/metrics-over-time${qs({ bucket, ...p })}`),
+  recent: (limit?: number) => get<RecentItem[]>(`/stats/recent${qs({ limit })}`),
 
   async createShare(): Promise<{ share_token: string }> {
     const res = await fetch('/shares', { method: 'POST', credentials: 'include' });
@@ -52,7 +71,7 @@ export const api = {
   },
 
   shared: {
-    summary: (t: string) => get<{ total_listens: number }>(`/shared/${t}/summary`),
+    summary: (t: string) => get<Summary>(`/shared/${t}/summary`),
     topArtists: (t: string) => get<ArtistCount[]>(`/shared/${t}/top-artists`),
     topTracks: (t: string) => get<TrackCount[]>(`/shared/${t}/top-tracks`),
     topAlbums: (t: string) => get<AlbumCount[]>(`/shared/${t}/top-albums`),

@@ -58,6 +58,30 @@ class Listen(Base):
     track_mbid: Mapped[str | None] = mapped_column(String(36))
     artist_mbid: Mapped[str | None] = mapped_column(String(36))
     album_mbid: Mapped[str | None] = mapped_column(String(36))
+    # Track length in seconds, resolved from Last.fm track.getInfo. NULL = not
+    # yet resolved or unknown; "time listened" sums this column.
+    duration_sec: Mapped[int | None] = mapped_column(Integer)
+
+
+class TrackDuration(Base):
+    """Per-track duration cache so each unique (artist, track) is fetched once.
+
+    ``duration_sec`` is NULL when Last.fm has no duration for the track; the row
+    still exists so we don't keep re-requesting it.
+    """
+
+    __tablename__ = "track_durations"
+    __table_args__ = (
+        UniqueConstraint("artist", "track_title", name="uq_track_duration"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    artist: Mapped[str] = mapped_column(Text, nullable=False)
+    track_title: Mapped[str] = mapped_column(Text, nullable=False)
+    duration_sec: Mapped[int | None] = mapped_column(Integer)
+    fetched_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
 
 
 class SyncState(Base):

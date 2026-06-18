@@ -65,10 +65,21 @@ async def shared_summary(
     token: str, session: AsyncSession = Depends(get_session)
 ) -> dict:
     share = await _resolve_share(session, token)
-    total = await queries.total_listens(
+    return await queries.summary_stats(
         session, share.user_id, since=share.range_from, until=share.range_to
     )
-    return {"total_listens": total}
+
+
+@router.get("/shared/{token}/metrics-over-time")
+async def shared_metrics_over_time(
+    token: str,
+    bucket: Literal["day", "week", "month"] = "day",
+    session: AsyncSession = Depends(get_session),
+) -> list[dict]:
+    share = await _resolve_share(session, token)
+    return await queries.metrics_over_time(
+        session, share.user_id, bucket=bucket, since=share.range_from, until=share.range_to
+    )
 
 
 @router.get("/shared/{token}/top-tracks")

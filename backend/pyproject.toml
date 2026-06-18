@@ -16,6 +16,7 @@ dependencies = [
 [project.scripts]
 tidalwave-poll = "tidalwave.cli:poll"
 tidalwave-backfill = "tidalwave.cli:backfill"
+tidalwave-backfill-durations = "tidalwave.cli:backfill_durations"
 
 [dependency-groups]
 dev = [

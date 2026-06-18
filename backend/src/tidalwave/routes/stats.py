@@ -87,6 +87,17 @@ async def recent(
     return await queries.recent_listens(session, user.id, limit=limit)
 
 
+@router.get("/metrics-over-time")
+async def metrics_over_time(
+    bucket: Literal["day", "week", "month"] = "day",
+    since: datetime | None = None,
+    until: datetime | None = None,
+    user: User = Depends(current_user),
+    session: AsyncSession = Depends(get_session),
+) -> list[dict]:
+    return await queries.metrics_over_time(session, user.id, bucket=bucket, since=since, until=until)
+
+
 @router.get("/summary")
 async def summary(
     since: datetime | None = None,
@@ -94,4 +105,4 @@ async def summary(
     user: User = Depends(current_user),
     session: AsyncSession = Depends(get_session),
 ) -> dict:
-    return {"total_listens": await queries.total_listens(session, user.id, since=since, until=until)}
+    return await queries.summary_stats(session, user.id, since=since, until=until)

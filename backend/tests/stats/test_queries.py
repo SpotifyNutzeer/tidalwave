@@ -7,6 +7,8 @@ from tidalwave.stats.queries import (
     listening_clock,
     listening_weekday,
     listens_over_time,
+    metrics_over_time,
+    summary_stats,
     top_artists,
     total_listens,
 )
@@ -38,6 +40,34 @@ async def test_top_artists_ranks_by_count(db_session):
 async def test_total_listens(db_session):
     user = await _seed(db_session)
     assert await total_listens(db_session, user.id) == 3
+
+
+async def test_summary_stats_counts_distinct(db_session):
+    user = await _seed(db_session)  # 2 Daft Punk + 1 Kavinsky, tracks a/b/c, no albums
+    stats = await summary_stats(db_session, user.id)
+    assert stats["total_listens"] == 3
+    assert stats["distinct_artists"] == 2
+    assert stats["distinct_tracks"] == 3
+    assert stats["distinct_albums"] == 0  # all albums NULL
+    assert stats["total_seconds"] == 0  # no durations resolved
+
+
+async def test_metrics_over_time_per_day(db_session):
+    user = await upsert_user_from_session(db_session, "metrics", "sk", mode="open", allowlist=[])
+    day1 = datetime(2024, 3, 10, 8, tzinfo=UTC)
+    day2 = datetime(2024, 3, 12, 20, tzinfo=UTC)
+    await upsert_listens(db_session, user.id, [
+        Scrobble(artist="X", track_title="t1", album=None, played_at=day1),
+        Scrobble(artist="Y", track_title="t2", album=None, played_at=day1),
+        Scrobble(artist="X", track_title="t3", album=None, played_at=day2),
+    ])
+    rows = await metrics_over_time(db_session, user.id, bucket="day")
+    assert len(rows) == 2
+    assert {"period", "listens", "artists", "albums", "seconds"} <= rows[0].keys()
+    assert rows[0]["listens"] == 2
+    assert rows[0]["artists"] == 2  # X + Y on day1
+    assert rows[1]["listens"] == 1
+    assert rows[0]["period"] < rows[1]["period"]
 
 
 async def test_listening_clock_buckets_by_hour(db_session):

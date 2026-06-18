@@ -1,13 +1,17 @@
 <script lang="ts">
   import ThemeToggle from './ThemeToggle.svelte';
-  let { children }: { children?: import('svelte').Snippet } = $props();
+  import type { Snippet } from 'svelte';
+  let { nav, children }: { nav?: Snippet; children?: Snippet } = $props();
 </script>
 
 <header>
-  <a class="brand" href="/">
-    <span class="mark" aria-hidden="true"></span>
-    tidalwave
-  </a>
+  <div class="lead">
+    <a class="brand" href="/">
+      <span class="mark" aria-hidden="true"></span>
+      tidalwave
+    </a>
+    {@render nav?.()}
+  </div>
   <div class="actions">
     {@render children?.()}
     <ThemeToggle />
@@ -22,12 +26,19 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 1rem;
+    gap: 0.75rem 1.25rem;
+    flex-wrap: wrap;
     padding: 0.85rem clamp(1rem, 4vw, 2rem);
     background: var(--glass-bg);
     border-bottom: 1px solid var(--glass-border);
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
+  }
+  .lead {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    flex-wrap: wrap;
   }
   .brand {
     display: inline-flex;
