@@ -64,3 +64,31 @@ async def test_ingest_user_now_stores_listens(committing_factory):
 async def test_ingest_user_now_noops_for_missing_user(committing_factory):
     # Must not raise when the user id does not exist.
     await ingest_user_now(committing_factory, FakeClient({}), 999999)
+
+
+async def test_ingest_user_now_swallows_unexpected_error(committing_factory):
+    class BoomClient:
+        async def get_recent_tracks(self, username, *, from_ts=None, page=1, limit=200, session_key=None):
+            raise ValueError("boom")
+
+    async with committing_factory() as s:
+        user = await upsert_user_from_session(s, "bob", "sk", mode="open", allowlist=[])
+        await s.commit()
+        uid = user.id
+
+    # Must not raise — the contract is fire-and-forget after the HTTP response.
+    await ingest_user_now(committing_factory, BoomClient(), uid)
+
+
+async def test_ingest_user_now_is_incremental_on_repeat(committing_factory):
+    async with committing_factory() as s:
+        user = await upsert_user_from_session(s, "carol", "sk", mode="open", allowlist=[])
+        await s.commit()
+        uid = user.id
+
+    await ingest_user_now(committing_factory, FakeClient({"carol": _page(1000)}), uid)
+    await ingest_user_now(committing_factory, FakeClient({"carol": _page(2000)}), uid)
+
+    async with committing_factory() as s:
+        listens = (await s.execute(select(Listen).where(Listen.user_id == uid))).scalars().all()
+    assert len(listens) == 2

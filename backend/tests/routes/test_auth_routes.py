@@ -14,9 +14,15 @@ async def test_login_redirects_to_lastfm(api):
     assert q["cb"] == ["http://test/auth/callback"]
 
 
-async def test_callback_creates_user_and_sets_cookie(api):
+async def test_callback_creates_user_and_sets_cookie(api, monkeypatch):
     client, app = api
     from tidalwave.deps import get_lastfm_client
+    from tidalwave.routes import auth as auth_module
+
+    async def _noop(*args, **kwargs):
+        pass
+
+    monkeypatch.setattr(auth_module, "ingest_user_now", _noop)
 
     class FakeLastfm:
         async def get_session(self, token):
