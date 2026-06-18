@@ -1,12 +1,14 @@
 <script lang="ts">
   import { page } from '$app/stores';
 
-  const links = [
+  const DEFAULT_LINKS = [
     { href: '/', label: 'Overview' },
     { href: '/artists', label: 'Artists' },
     { href: '/tracks', label: 'Tracks' },
     { href: '/albums', label: 'Albums' }
   ];
+
+  let { links = DEFAULT_LINKS }: { links?: { href: string; label: string }[] } = $props();
 </script>
 
 <nav aria-label="Sections">

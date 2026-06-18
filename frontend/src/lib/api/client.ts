@@ -72,12 +72,13 @@ export const api = {
 
   shared: {
     summary: (t: string) => get<Summary>(`/shared/${t}/summary`),
-    topArtists: (t: string) => get<ArtistCount[]>(`/shared/${t}/top-artists`),
-    topTracks: (t: string) => get<TrackCount[]>(`/shared/${t}/top-tracks`),
-    topAlbums: (t: string) => get<AlbumCount[]>(`/shared/${t}/top-albums`),
+    topArtists: (t: string, limit?: number) => get<ArtistCount[]>(`/shared/${t}/top-artists${qs({ limit })}`),
+    topTracks: (t: string, limit?: number) => get<TrackCount[]>(`/shared/${t}/top-tracks${qs({ limit })}`),
+    topAlbums: (t: string, limit?: number) => get<AlbumCount[]>(`/shared/${t}/top-albums${qs({ limit })}`),
     clock: (t: string) => get<number[]>(`/shared/${t}/clock`),
     weekday: (t: string) => get<number[]>(`/shared/${t}/weekday`),
     history: (t: string, bucket: Bucket = 'day') => get<HistoryPoint[]>(`/shared/${t}/history?bucket=${bucket}`),
+    metricsOverTime: (t: string, bucket: Bucket = 'day') => get<MetricPoint[]>(`/shared/${t}/metrics-over-time?bucket=${bucket}`),
     recent: (t: string) => get<RecentItem[]>(`/shared/${t}/recent`)
   }
 };

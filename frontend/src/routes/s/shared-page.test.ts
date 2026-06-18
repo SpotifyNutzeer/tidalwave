@@ -13,7 +13,7 @@ describe('shared dashboard page', () => {
     vi.spyOn(api.shared, 'topAlbums').mockResolvedValue([]);
     vi.spyOn(api.shared, 'clock').mockResolvedValue(new Array(24).fill(0));
     vi.spyOn(api.shared, 'weekday').mockResolvedValue(new Array(7).fill(0));
-    vi.spyOn(api.shared, 'history').mockResolvedValue([]);
+    vi.spyOn(api.shared, 'metricsOverTime').mockResolvedValue([]);
     vi.spyOn(api.shared, 'recent').mockResolvedValue([]);
 
     render(SharedPage, { props: { data: { token: 'TOK' } } });

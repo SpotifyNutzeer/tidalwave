@@ -5,7 +5,9 @@
   import TopList from './TopList.svelte';
   import AreaTrend from './AreaTrend.svelte';
 
-  let { kind }: { kind: 'artists' | 'tracks' | 'albums' } = $props();
+  // `token` switches to shared-link mode (data from the shared endpoints).
+  let { kind, token, errorMessage = 'Could not load your stats. Please try again.' }:
+    { kind: 'artists' | 'tracks' | 'albums'; token?: string; errorMessage?: string } = $props();
 
   const TITLES = { artists: 'Top Artists', tracks: 'Top Tracks', albums: 'Top Albums' };
   const TRENDS = { artists: 'Artists over time', tracks: 'Listens over time', albums: 'Albums over time' };
@@ -15,25 +17,36 @@
   let error = $state(false);
 
   $effect(() => {
-    const p = { since: sinceFor($range) };
-    const bucket = bucketFor($range);
+    const shared = token != null;
+    const params = shared ? undefined : { since: sinceFor($range) };
+    const bucket = shared ? 'day' : bucketFor($range);
     const k = kind;
     (async () => {
       try {
-        const metricsPromise = api.metricsOverTime(bucket, p);
-        if (k === 'artists') {
-          items = (await api.topArtists(100, p)).map((r) => ({ label: r.artist, count: r.count }));
-        } else if (k === 'tracks') {
-          items = (await api.topTracks(100, p)).map((r) => ({ label: r.track, count: r.count }));
+        if (token != null) {
+          const metricsPromise = api.shared.metricsOverTime(token, bucket);
+          if (k === 'artists') {
+            items = (await api.shared.topArtists(token, 100)).map((r) => ({ label: r.artist, count: r.count }));
+          } else if (k === 'tracks') {
+            items = (await api.shared.topTracks(token, 100)).map((r) => ({ label: r.track, count: r.count }));
+          } else {
+            items = (await api.shared.topAlbums(token, 100)).map((r) => ({ label: r.album ?? 'Unknown album', count: r.count }));
+          }
+          metrics = await metricsPromise;
         } else {
-          items = (await api.topAlbums(100, p)).map((r) => ({
-            label: r.album ?? 'Unknown album', count: r.count
-          }));
+          const metricsPromise = api.metricsOverTime(bucket, params);
+          if (k === 'artists') {
+            items = (await api.topArtists(100, params)).map((r) => ({ label: r.artist, count: r.count }));
+          } else if (k === 'tracks') {
+            items = (await api.topTracks(100, params)).map((r) => ({ label: r.track, count: r.count }));
+          } else {
+            items = (await api.topAlbums(100, params)).map((r) => ({ label: r.album ?? 'Unknown album', count: r.count }));
+          }
+          metrics = await metricsPromise;
         }
-        metrics = await metricsPromise;
         error = false;
       } catch (e) {
-        if (e instanceof ApiError && e.status === 401) await loadMe();
+        if (!shared && e instanceof ApiError && e.status === 401) await loadMe();
         else error = true;
       }
     })();
@@ -48,7 +61,7 @@
 </script>
 
 {#if error}
-  <p class="error">Could not load your stats. Please try again.</p>
+  <p class="error">{errorMessage}</p>
 {:else}
   <div class="dashboard">
     <AreaTrend title={TRENDS[kind]} points={trend} />

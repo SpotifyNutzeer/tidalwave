@@ -1,5 +1,9 @@
 <script lang="ts">
-  import { api, ApiError, type Summary, type MetricPoint, type RecentItem } from '$lib/api/client';
+  import {
+    api, ApiError,
+    type Summary, type MetricPoint, type RecentItem,
+    type ArtistCount, type TrackCount, type AlbumCount
+  } from '$lib/api/client';
   import { loadMe } from '$lib/stores/auth';
   import { range, sinceFor, bucketFor } from '$lib/stores/range';
   import { formatCount, formatDuration } from '$lib/format';
@@ -9,6 +13,11 @@
   import ListeningClock from './ListeningClock.svelte';
   import WeekdayChart from './WeekdayChart.svelte';
   import RecentList from './RecentList.svelte';
+
+  // `token` switches to shared-link mode: data comes from the shared endpoints
+  // (range fixed by the share) instead of the global range store.
+  let { token, errorMessage = 'Could not load your stats. Please try again.' }:
+    { token?: string; errorMessage?: string } = $props();
 
   const EMPTY: Summary = {
     total_listens: 0, distinct_artists: 0, distinct_tracks: 0, distinct_albums: 0, total_seconds: 0
@@ -24,25 +33,44 @@
   let recent = $state<RecentItem[]>([]);
   let error = $state(false);
 
+  const base = $derived(token ? `/s/${token}` : '');
+
+  function apply(
+    s: Summary, m: MetricPoint[], ar: ArtistCount[], tr: TrackCount[], al: AlbumCount[],
+    cl: number[], wd: number[], rc: RecentItem[]
+  ) {
+    summary = s;
+    metrics = m;
+    artists = ar.map((x) => ({ label: x.artist, count: x.count }));
+    tracks = tr.map((x) => ({ label: x.track, count: x.count }));
+    albums = al.map((x) => ({ label: x.album ?? 'Unknown album', count: x.count }));
+    hours = cl; days = wd; recent = rc;
+  }
+
   $effect(() => {
-    const p = { since: sinceFor($range) };
-    const bucket = bucketFor($range);
+    const shared = token != null;
+    const params = shared ? undefined : { since: sinceFor($range) };
+    const bucket = shared ? 'day' : bucketFor($range);
     (async () => {
       try {
-        const [s, m, ar, tr, al, cl, wd, rc] = await Promise.all([
-          api.summary(p), api.metricsOverTime(bucket, p),
-          api.topArtists(5, p), api.topTracks(5, p), api.topAlbums(5, p),
-          api.clock(p), api.weekday(p), api.recent(12)
-        ]);
-        summary = s;
-        metrics = m;
-        artists = ar.map((x) => ({ label: x.artist, count: x.count }));
-        tracks = tr.map((x) => ({ label: x.track, count: x.count }));
-        albums = al.map((x) => ({ label: x.album ?? 'Unknown album', count: x.count }));
-        hours = cl; days = wd; recent = rc;
+        if (token != null) {
+          const [s, m, ar, tr, al, cl, wd, rc] = await Promise.all([
+            api.shared.summary(token), api.shared.metricsOverTime(token, bucket),
+            api.shared.topArtists(token, 5), api.shared.topTracks(token, 5), api.shared.topAlbums(token, 5),
+            api.shared.clock(token), api.shared.weekday(token), api.shared.recent(token)
+          ]);
+          apply(s, m, ar, tr, al, cl, wd, rc);
+        } else {
+          const [s, m, ar, tr, al, cl, wd, rc] = await Promise.all([
+            api.summary(params), api.metricsOverTime(bucket, params),
+            api.topArtists(5, params), api.topTracks(5, params), api.topAlbums(5, params),
+            api.clock(params), api.weekday(params), api.recent(12)
+          ]);
+          apply(s, m, ar, tr, al, cl, wd, rc);
+        }
         error = false;
       } catch (e) {
-        if (e instanceof ApiError && e.status === 401) await loadMe();
+        if (!shared && e instanceof ApiError && e.status === 401) await loadMe();
         else error = true;
       }
     })();
@@ -55,7 +83,7 @@
 </script>
 
 {#if error}
-  <p class="error">Could not load your stats. Please try again.</p>
+  <p class="error">{errorMessage}</p>
 {:else}
   <div class="dashboard">
     <div class="row stats">
@@ -78,9 +106,9 @@
       <WeekdayChart {days} />
     </div>
     <div class="row tops">
-      <TopList title="Top Artists" items={artists} href="/artists" />
-      <TopList title="Top Tracks" items={tracks} href="/tracks" />
-      <TopList title="Top Albums" items={albums} href="/albums" />
+      <TopList title="Top Artists" items={artists} href="{base}/artists" />
+      <TopList title="Top Tracks" items={tracks} href="{base}/tracks" />
+      <TopList title="Top Albums" items={albums} href="{base}/albums" />
     </div>
     <RecentList items={recent} />
   </div>
