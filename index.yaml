@@ -2,6 +2,24 @@ apiVersion: v1
 entries:
   tidalwave:
   - apiVersion: v2
+    appVersion: 0.1.9
+    created: "2026-06-18T19:23:25.797786495Z"
+    description: Self-hosted multi-user Tidal listening tracker (via Last.fm)
+    digest: 5500332da91d37e4f89cf1ae247ab6412f333e7d02199b46f873f1d0f656bc65
+    home: https://github.com/SpotifyNutzeer/tidalwave
+    keywords:
+    - tidal
+    - lastfm
+    - listening-tracker
+    - self-hosted
+    name: tidalwave
+    sources:
+    - https://github.com/SpotifyNutzeer/tidalwave
+    type: application
+    urls:
+    - https://github.com/SpotifyNutzeer/tidalwave/releases/download/tidalwave-0.1.9/tidalwave-0.1.9.tgz
+    version: 0.1.9
+  - apiVersion: v2
     appVersion: 0.1.8
     created: "2026-06-18T17:01:01.884779345Z"
     description: Self-hosted multi-user Tidal listening tracker (via Last.fm)
@@ -163,4 +181,4 @@ entries:
     urls:
     - https://github.com/SpotifyNutzeer/tidalwave/releases/download/tidalwave-0.1.0/tidalwave-0.1.0.tgz
     version: 0.1.0
-generated: "2026-06-18T17:01:01.884815589Z"
+generated: "2026-06-18T19:23:25.797825619Z"
