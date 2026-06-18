@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from urllib.parse import urlencode
 
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, Response
 from fastapi.responses import RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -12,6 +12,7 @@ from tidalwave.auth.session import COOKIE_NAME, SessionCodec, current_user
 from tidalwave.models.db import User
 from tidalwave.config import Settings
 from tidalwave.deps import get_lastfm_client, get_session, get_settings
+from tidalwave.ingest.poller import ingest_user_now
 from tidalwave.lastfm.client import LastfmClient, LastfmError
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -29,6 +30,8 @@ async def login(settings: Settings = Depends(get_settings)) -> RedirectResponse:
 @router.get("/callback")
 async def callback(
     token: str,
+    background: BackgroundTasks,
+    request: Request,
     client: LastfmClient = Depends(get_lastfm_client),
     session: AsyncSession = Depends(get_session),
     settings: Settings = Depends(get_settings),
@@ -45,6 +48,10 @@ async def callback(
         )
     except RegistrationDenied as e:
         raise HTTPException(status_code=403, detail="Registration not allowed") from e
+
+    background.add_task(
+        ingest_user_now, request.app.state.session_factory, client, user.id
+    )
 
     codec = SessionCodec(settings.session_secret)
     resp = RedirectResponse("/", status_code=307)

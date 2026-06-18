@@ -47,3 +47,33 @@ async def test_me_returns_current_user(api, db_session):
     resp = await client.get("/auth/me", headers={"Cookie": f"{COOKIE_NAME}={cookie}"})
     assert resp.status_code == 200
     assert resp.json() == {"username": "alice", "is_admin": True}
+
+
+async def test_callback_schedules_immediate_ingest(api, monkeypatch):
+    client, app = api
+    from tidalwave.deps import get_lastfm_client
+    from tidalwave.routes import auth as auth_module
+
+    class FakeLastfm:
+        async def get_session(self, token):
+            return ("alice", "SESS")
+
+    fake = FakeLastfm()
+    app.dependency_overrides[get_lastfm_client] = lambda: fake
+
+    calls = []
+
+    async def spy(session_factory, lastfm_client, user_id):
+        calls.append((session_factory, lastfm_client, user_id))
+
+    monkeypatch.setattr(auth_module, "ingest_user_now", spy)
+
+    resp = await client.get("/auth/callback?token=TOK", follow_redirects=False)
+    assert resp.status_code == 307
+
+    # FastAPI runs background tasks after the response is sent.
+    assert len(calls) == 1
+    session_factory, lastfm_client, user_id = calls[0]
+    assert session_factory is app.state.session_factory
+    assert lastfm_client is fake
+    assert isinstance(user_id, int)
