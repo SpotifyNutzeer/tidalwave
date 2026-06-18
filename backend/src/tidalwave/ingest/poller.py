@@ -3,7 +3,9 @@ from __future__ import annotations
 import logging
 
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+
+from tidalwave.db import session_scope
 
 from tidalwave.ingest.service import RecentTracksSource, ingest_user
 from tidalwave.lastfm.client import LastfmError
@@ -33,6 +35,28 @@ async def ingest_one_user(
             await session.flush()
             return "disconnected"
         return "error"
+
+
+async def ingest_user_now(
+    session_factory: async_sessionmaker[AsyncSession],
+    client: RecentTracksSource,
+    user_id: int,
+) -> None:
+    """Background-task entrypoint: ingest a single user right after they connect.
+
+    Opens its own session (the request session is closed by now), re-loads the
+    user by id, ingests, and commits. Never raises — the HTTP response is already
+    sent, so failures are only logged.
+    """
+    try:
+        async with session_scope(session_factory) as session:
+            user = await session.get(User, user_id)
+            if user is None:
+                return
+            await ingest_one_user(session, client, user)
+            await session.commit()
+    except Exception:
+        log.exception("immediate ingest failed for user_id=%s", user_id)
 
 
 async def poll_all_users(
