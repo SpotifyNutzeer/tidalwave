@@ -21,15 +21,49 @@
   }
 </script>
 
-{#if shareUrl}
-  <span class="link">{shareUrl}</span>
-  <button onclick={copy}>Copy</button>
-  <button onclick={revoke}>Revoke</button>
-{:else}
-  <button onclick={createShare} disabled={busy}>Share</button>
-{/if}
+<div class="share">
+  {#if shareUrl}
+    <span class="link">{shareUrl}</span>
+    <button onclick={copy}>Copy</button>
+    <button class="ghost" onclick={revoke}>Revoke</button>
+  {:else}
+    <button onclick={createShare} disabled={busy}>Share</button>
+  {/if}
+</div>
 
 <style>
-  .link { color: var(--blue); font-size: 0.85rem; }
-  button { background: var(--surface); color: var(--text); border: 0; border-radius: 6px; padding: 0.4rem 0.6rem; cursor: pointer; }
+  .share {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .link {
+    color: var(--accent-cyan);
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    max-width: 14rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  button {
+    background: var(--glass-bg-strong);
+    color: var(--text);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--r-pill);
+    padding: 0.4rem 0.85rem;
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: border-color var(--dur) var(--ease-out);
+  }
+  button:hover:not(:disabled) {
+    border-color: var(--accent);
+  }
+  button:disabled {
+    opacity: 0.6;
+    cursor: default;
+  }
+  .ghost {
+    color: var(--text-muted);
+  }
 </style>

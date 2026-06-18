@@ -13,9 +13,9 @@
   }
 </script>
 
-<figure role="img" aria-label="Listens over time">
+<figure class="glass" role="img" aria-label="Listens over time">
   <figcaption class="head">
-    <span>Over time</span>
+    <span class="title">Over time</span>
     <label>
       <span class="sr-only">Bucket</span>
       <select aria-label="Bucket" value={bucket} onchange={onChange}>
@@ -25,17 +25,58 @@
       </select>
     </label>
   </figcaption>
-  <div class="chart">
+  <div class="chart tall">
     {#if browser}
-      <AreaChart {data} x="date" y="count" />
+      <AreaChart
+        {data}
+        x="date"
+        y="count"
+        props={{
+          area: {
+            fill: 'var(--accent)',
+            fillOpacity: 0.2,
+            line: { stroke: 'var(--accent)', 'stroke-width': 2 }
+          }
+        }}
+      />
     {/if}
   </div>
 </figure>
 
 <style>
-  figure { background: var(--surface); border-radius: 10px; padding: 1rem 1.25rem; margin: 0; }
-  figcaption { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; color: var(--subtext); font-size: 1rem; }
-  select { background: var(--mantle); color: var(--text); border: 0; border-radius: 6px; padding: 0.3rem 0.5rem; }
-  .chart { height: 240px; }
-  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  figure {
+    padding: 1.4rem 1.5rem;
+    margin: 0;
+  }
+  .head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+  }
+  .title {
+    font-family: var(--font-display);
+    font-size: 1.35rem;
+    color: var(--text);
+  }
+  select {
+    background: var(--glass-bg-strong);
+    color: var(--text);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--r-pill);
+    padding: 0.3rem 0.8rem;
+    font-family: var(--font-body);
+    font-size: 0.85rem;
+    cursor: pointer;
+  }
+  .tall {
+    height: 240px;
+  }
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
 </style>
