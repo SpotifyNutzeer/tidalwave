@@ -3,7 +3,7 @@ from tidalwave.models.db import Base, Listen, User
 
 def test_tables_registered():
     names = set(Base.metadata.tables)
-    assert names == {"users", "listens", "sync_state", "shares"}
+    assert names == {"users", "listens", "sync_state", "shares", "track_durations"}
 
 
 def test_listen_dedup_constraint_present():
