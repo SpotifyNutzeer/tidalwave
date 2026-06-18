@@ -168,32 +168,31 @@ body::after {
 
 body::before {
   background:
-    radial-gradient(42vmax 42vmax at 16% 20%, rgba(var(--blob-a), 0.5), transparent 62%),
-    radial-gradient(48vmax 48vmax at 84% 14%, rgba(var(--blob-b), 0.46), transparent 64%),
-    radial-gradient(54vmax 54vmax at 62% 96%, rgba(var(--blob-c), 0.5), transparent 66%);
-  filter: blur(64px) saturate(135%);
-  animation: drift 40s ease-in-out infinite alternate;
+    radial-gradient(42vmax 42vmax at 16% 20%, rgba(var(--blob-a), 0.28), transparent 60%),
+    radial-gradient(48vmax 48vmax at 84% 14%, rgba(var(--blob-b), 0.24), transparent 62%),
+    radial-gradient(54vmax 54vmax at 62% 96%, rgba(var(--blob-c), 0.28), transparent 64%);
+  filter: blur(72px) saturate(115%);
+  animation: drift 60s ease-in-out infinite alternate;
 }
 
 :root[data-theme='latte'] body::before {
-  opacity: 0.85;
+  opacity: 0.7;
 }
 
 body::after {
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.35 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
-  opacity: 0.08;
+  opacity: 0.04;
   mix-blend-mode: overlay;
 }
 
 :root[data-theme='latte'] body::after {
-  opacity: 0.1;
+  opacity: 0.06;
   mix-blend-mode: multiply;
 }
 
 @keyframes drift {
-  0%   { transform: translate3d(0, 0, 0)          rotate(0deg); }
-  50%  { transform: translate3d(4vmax, -3vmax, 0) rotate(7deg); }
-  100% { transform: translate3d(-3vmax, 3vmax, 0) rotate(-6deg); }
+  0%   { transform: translate3d(0, 0, 0); }
+  100% { transform: translate3d(-2vmax, 2vmax, 0); }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -224,22 +223,32 @@ h1, h2, h3 {
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
   border-radius: var(--r-lg);
-  backdrop-filter: blur(28px) saturate(180%);
-  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
   box-shadow: var(--glass-shadow);
 }
 
-/* Dashboard layout — shared by the private and shared-link views. */
+/* Dashboard layout — shared by the private and shared-link views.
+   A vertical stack of full-width blocks; the .row blocks lay their cards out
+   horizontally so the three top-lists and the two charts sit side by side
+   instead of stacking into one long scroll. */
 .dashboard {
   max-width: 1180px;
   margin: 0 auto;
-  padding: clamp(1.5rem, 4vw, 2.5rem) clamp(1rem, 4vw, 2rem) 4rem;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  padding: clamp(1.25rem, 4vw, 2rem) clamp(1rem, 4vw, 2rem) 3.5rem;
+  display: flex;
+  flex-direction: column;
   gap: 1.1rem;
 }
-.dashboard > .hero {
-  grid-column: 1 / -1;
+.dashboard .row {
+  display: grid;
+  gap: 1.1rem;
+}
+.dashboard .tops {
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+}
+.dashboard .charts {
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
 }
 
 .eyebrow {
@@ -287,12 +296,43 @@ h1, h2, h3 {
   fill-opacity: 0.16;
 }
 
-/* Pure-CSS bar charts (hour-of-day, weekday) — no chart lib, full control. */
+/* Pure-CSS bar charts (hour-of-day, weekday) — no chart lib, full control.
+   .plot lays a numeric y-axis beside the bars; .plot-main stacks the bars and
+   their x-labels so both align under the same column. */
+.plot {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  column-gap: 0.6rem;
+}
+.plot-main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.yaxis {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: flex-end;
+  height: 190px;
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
 .barchart {
   display: flex;
   align-items: flex-end;
   gap: 3px;
   height: 190px;
+  /* Three faint gridlines aligned with the y-axis ticks (max / mid / 0). */
+  background-image:
+    linear-gradient(var(--glass-border), var(--glass-border)),
+    linear-gradient(var(--glass-border), var(--glass-border)),
+    linear-gradient(var(--glass-border), var(--glass-border));
+  background-size: 100% 1px;
+  background-position: 0 0, 0 50%, 0 100%;
+  background-repeat: no-repeat;
 }
 .barchart .col {
   flex: 1 1 0;

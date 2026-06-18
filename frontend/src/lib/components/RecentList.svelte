@@ -1,7 +1,10 @@
 <script lang="ts">
   import { formatDateTime } from '$lib/format';
   import type { RecentItem } from '$lib/api/client';
-  let { items }: { items: RecentItem[] } = $props();
+  let { items, initial = 6 }: { items: RecentItem[]; initial?: number } = $props();
+
+  let expanded = $state(false);
+  const visible = $derived(expanded ? items : items.slice(0, initial));
 </script>
 
 <section class="glass">
@@ -10,7 +13,7 @@
     <p class="empty">No data yet.</p>
   {:else}
     <ul>
-      {#each items as item (item.played_at + item.track)}
+      {#each visible as item (item.played_at + item.track)}
         <li>
           <span class="track">{item.track}</span>
           <span class="artist">{item.artist}</span>
@@ -18,6 +21,11 @@
         </li>
       {/each}
     </ul>
+    {#if items.length > initial}
+      <button class="more" onclick={() => (expanded = !expanded)}>
+        {expanded ? 'Show less' : `Show ${items.length - initial} more`}
+      </button>
+    {/if}
   {/if}
 </section>
 
@@ -72,5 +80,23 @@
   .empty {
     color: var(--text-dim);
     margin: 0;
+  }
+  .more {
+    margin-top: 0.4rem;
+    width: 100%;
+    background: none;
+    border: 0;
+    border-top: 1px solid var(--glass-border);
+    padding: 0.65rem 0 0.1rem;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.04em;
+    text-align: left;
+    cursor: pointer;
+    transition: color var(--dur-fast) var(--ease-out);
+  }
+  .more:hover {
+    color: var(--accent);
   }
 </style>

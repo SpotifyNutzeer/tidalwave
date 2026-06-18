@@ -56,11 +56,15 @@
   <div class="dashboard">
     <SummaryCard {total} />
     <HistoryChart points={history} {bucket} onBucketChange={loadHistory} />
-    <TopList title="Top Artists" items={artists} />
-    <TopList title="Top Tracks" items={tracks} />
-    <TopList title="Top Albums" items={albums} />
-    <ListeningClock {hours} />
-    <WeekdayChart {days} />
+    <div class="row tops">
+      <TopList title="Top Artists" items={artists} />
+      <TopList title="Top Tracks" items={tracks} />
+      <TopList title="Top Albums" items={albums} />
+    </div>
+    <div class="row charts">
+      <ListeningClock {hours} />
+      <WeekdayChart {days} />
+    </div>
     <RecentList items={recent} />
   </div>
 {/if}

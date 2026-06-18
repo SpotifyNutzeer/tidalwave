@@ -6,17 +6,26 @@
 
 <figure class="glass" role="img" aria-label="Listens by hour of day">
   <figcaption>By hour (UTC)</figcaption>
-  <div class="barchart" aria-hidden="true">
-    {#each hours as count, h (h)}
-      <div class="col" title="{h}:00 — {count}">
-        <div class="bar" style="height: {(count / max) * 100}%"></div>
+  <div class="plot">
+    <div class="yaxis" aria-hidden="true">
+      <span>{max}</span>
+      <span>{Math.round(max / 2)}</span>
+      <span>0</span>
+    </div>
+    <div class="plot-main">
+      <div class="barchart" aria-hidden="true">
+        {#each hours as count, h (h)}
+          <div class="col" title="{h}:00 — {count}">
+            <div class="bar" style="height: {(count / max) * 100}%"></div>
+          </div>
+        {/each}
       </div>
-    {/each}
+      <div class="barlabels" aria-hidden="true">
+        <span>0</span><span>6</span><span>12</span><span>18</span><span>23</span>
+      </div>
+    </div>
   </div>
-  <div class="barlabels" aria-hidden="true">
-    <span>0</span><span>6</span><span>12</span><span>18</span><span>23</span>
-  </div>
-  <span class="sr-only">{total} listens</span>
+  <span class="sr-only">{total} listens · peak {max} per hour</span>
 </figure>
 
 <style>

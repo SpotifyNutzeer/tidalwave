@@ -1,6 +1,10 @@
 <script lang="ts">
-  let { title, items }: { title: string; items: { label: string; count: number }[] } = $props();
+  let { title, items, initial = 5 }:
+    { title: string; items: { label: string; count: number }[]; initial?: number } = $props();
   const max = $derived(items.reduce((m, i) => Math.max(m, i.count), 0) || 1);
+
+  let expanded = $state(false);
+  const visible = $derived(expanded ? items : items.slice(0, initial));
 </script>
 
 <section class="glass">
@@ -9,7 +13,7 @@
     <p class="empty">No data yet.</p>
   {:else}
     <ol>
-      {#each items as item, i (item.label)}
+      {#each visible as item, i (item.label)}
         <li>
           <span class="bar" class:top={i === 0} style="width: {(item.count / max) * 100}%"></span>
           <span class="rank">{i + 1}</span>
@@ -18,6 +22,11 @@
         </li>
       {/each}
     </ol>
+    {#if items.length > initial}
+      <button class="more" onclick={() => (expanded = !expanded)}>
+        {expanded ? 'Show less' : `Show ${items.length - initial} more`}
+      </button>
+    {/if}
   {/if}
 </section>
 
@@ -84,5 +93,23 @@
   .empty {
     color: var(--text-dim);
     margin: 0;
+  }
+  .more {
+    margin-top: 0.6rem;
+    width: 100%;
+    background: none;
+    border: 0;
+    border-top: 1px solid var(--glass-border);
+    padding: 0.6rem 0 0.1rem;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.04em;
+    text-align: left;
+    cursor: pointer;
+    transition: color var(--dur-fast) var(--ease-out);
+  }
+  .more:hover {
+    color: var(--accent);
   }
 </style>

@@ -7,19 +7,28 @@
 
 <figure class="glass" role="img" aria-label="Listens by weekday">
   <figcaption>By weekday</figcaption>
-  <div class="barchart" aria-hidden="true">
-    {#each days as count, i (i)}
-      <div class="col" title="{weekdayName(i)} — {count}">
-        <div class="bar" style="height: {(count / max) * 100}%"></div>
+  <div class="plot">
+    <div class="yaxis" aria-hidden="true">
+      <span>{max}</span>
+      <span>{Math.round(max / 2)}</span>
+      <span>0</span>
+    </div>
+    <div class="plot-main">
+      <div class="barchart" aria-hidden="true">
+        {#each days as count, i (i)}
+          <div class="col" title="{weekdayName(i)} — {count}">
+            <div class="bar" style="height: {(count / max) * 100}%"></div>
+          </div>
+        {/each}
       </div>
-    {/each}
+      <div class="barlabels even" aria-hidden="true">
+        {#each days as _, i (i)}
+          <span>{weekdayName(i).slice(0, 1)}</span>
+        {/each}
+      </div>
+    </div>
   </div>
-  <div class="barlabels even" aria-hidden="true">
-    {#each days as _, i (i)}
-      <span>{weekdayName(i).slice(0, 1)}</span>
-    {/each}
-  </div>
-  <span class="sr-only">{total} listens</span>
+  <span class="sr-only">{total} listens · peak {max} per day</span>
 </figure>
 
 <style>
