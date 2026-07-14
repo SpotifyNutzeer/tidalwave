@@ -9,22 +9,16 @@
     display: inline-block;
     background: var(--accent);
     color: var(--accent-contrast);
-    font-weight: 600;
+    font-weight: 700;
     padding: 0.8rem 1.6rem;
-    border-radius: var(--r-pill);
+    border-radius: var(--r-sm);
     text-decoration: none;
-    transition:
-      transform var(--dur) var(--ease-spring),
-      box-shadow var(--dur) var(--ease-out);
-    box-shadow: 0 8px 24px -10px var(--accent);
+    transition: filter var(--dur-fast) var(--ease-out);
   }
   .connect:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 14px 30px -10px var(--accent);
+    filter: brightness(1.12);
   }
-  @media (prefers-reduced-motion: reduce) {
-    .connect {
-      transition: none;
-    }
+  .connect:focus-visible {
+    outline-offset: 3px;
   }
 </style>

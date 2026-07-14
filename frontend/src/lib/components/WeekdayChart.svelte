@@ -38,6 +38,7 @@
   }
   figcaption {
     font-family: var(--font-display);
+    font-weight: 700;
     font-size: 1.35rem;
     color: var(--text);
     margin-bottom: 0.9rem;

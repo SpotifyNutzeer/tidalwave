@@ -13,7 +13,7 @@
       <span>0</span>
     </div>
     <div class="plot-main">
-      <div class="barchart" aria-hidden="true">
+      <div class="barchart clock" aria-hidden="true">
         {#each hours as count, h (h)}
           <div class="col" title="{h}:00 — {count}">
             <div class="bar" style="height: {(count / max) * 100}%"></div>
@@ -35,9 +35,16 @@
   }
   figcaption {
     font-family: var(--font-display);
+    font-weight: 700;
     font-size: 1.35rem;
     color: var(--text);
     margin-bottom: 0.9rem;
+  }
+  /* The clock is the one element in this app that gets the sky accent
+     (see zen colour discipline — sky is reserved for exactly one
+     special element). */
+  .clock :global(.col .bar) {
+    background: var(--accent-cyan);
   }
   .sr-only {
     position: absolute;

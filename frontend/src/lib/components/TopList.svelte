@@ -141,12 +141,11 @@
     width: 100%;
     background: none;
     border: 0;
-    border-top: 1px solid var(--glass-border);
     padding: 0.6rem 0 0.1rem;
     color: var(--text-muted);
     font-family: var(--font-mono);
     font-size: 0.72rem;
-    letter-spacing: 0.04em;
+    text-transform: lowercase;
     text-align: left;
     cursor: pointer;
     transition: color var(--dur-fast) var(--ease-out);

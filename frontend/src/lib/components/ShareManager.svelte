@@ -38,7 +38,7 @@
     gap: 0.5rem;
   }
   .link {
-    color: var(--accent-cyan);
+    color: var(--text-muted);
     font-family: var(--font-mono);
     font-size: 0.78rem;
     max-width: 14rem;
@@ -47,17 +47,20 @@
     white-space: nowrap;
   }
   button {
-    background: var(--glass-bg-strong);
+    background: var(--surface0);
     color: var(--text);
-    border: 1px solid var(--glass-border);
-    border-radius: var(--r-pill);
+    border: 0;
+    border-radius: var(--r-sm);
     padding: 0.4rem 0.85rem;
     font-size: 0.82rem;
     cursor: pointer;
-    transition: border-color var(--dur) var(--ease-out);
+    transition: box-shadow var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
   }
   button:hover:not(:disabled) {
-    border-color: var(--accent);
+    background: var(--surface1);
+  }
+  button:focus-visible {
+    box-shadow: 0 0 0 2px var(--accent);
   }
   button:disabled {
     opacity: 0.6;

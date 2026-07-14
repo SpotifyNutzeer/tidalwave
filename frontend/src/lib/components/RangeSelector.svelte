@@ -20,20 +20,18 @@
     display: inline-flex;
     gap: 0.15rem;
     padding: 0.2rem;
-    border: 1px solid var(--glass-border);
-    border-radius: var(--r-pill);
-    background: var(--glass-bg);
+    border-radius: var(--r-sm);
   }
   button {
     border: 0;
     background: none;
     cursor: pointer;
     padding: 0.32rem 0.7rem;
-    border-radius: var(--r-pill);
+    border-radius: var(--r-xs);
     font-family: var(--font-mono);
     font-size: 0.72rem;
-    letter-spacing: 0.03em;
     color: var(--text-muted);
+    text-transform: lowercase;
     white-space: nowrap;
     transition: color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
   }

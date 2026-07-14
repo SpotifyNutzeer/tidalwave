@@ -16,6 +16,11 @@
     formatValue?: (n: number) => string;
   } = $props();
 
+  // Unique per instance: three AreaTrend charts share one page, and SVG
+  // gradient ids must be unique or url(#...) refs collide.
+  const instanceId = $props.id();
+  const gradientId = `area-fade-${instanceId}`;
+
   const max = $derived(Math.max(1, ...points.map((p) => p.value)));
 
   // Map points into a 0..100 viewBox; y is inverted (0 = top, 100 = baseline).
@@ -68,7 +73,13 @@
       <div class="plot-main">
         <div class="areachart">
           <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-            <path class="area" d={areaPath} />
+            <defs>
+              <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" style="stop-color: var(--accent); stop-opacity: 0.25" />
+                <stop offset="100%" style="stop-color: var(--accent); stop-opacity: 0" />
+              </linearGradient>
+            </defs>
+            <path class="area" d={areaPath} fill="url(#{gradientId})" />
             <path class="line" d={linePath} vector-effect="non-scaling-stroke" />
           </svg>
           <div class="hovers">
@@ -99,26 +110,34 @@
   }
   .title {
     font-family: var(--font-display);
+    font-weight: 700;
     font-size: 1.35rem;
     color: var(--text);
   }
   select {
-    background: var(--glass-bg-strong);
+    background: var(--surface0);
     color: var(--text);
-    border: 1px solid var(--glass-border);
-    border-radius: var(--r-pill);
+    border: 0;
+    border-radius: var(--r-sm);
     padding: 0.3rem 0.8rem;
     font-family: var(--font-body);
     font-size: 0.85rem;
     cursor: pointer;
+    transition: box-shadow var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
+  }
+  select:hover {
+    background: var(--surface1);
+  }
+  select:focus-visible {
+    box-shadow: 0 0 0 2px var(--accent);
   }
   .areachart {
     position: relative;
     height: 190px;
     background-image:
-      linear-gradient(var(--glass-border), var(--glass-border)),
-      linear-gradient(var(--glass-border), var(--glass-border)),
-      linear-gradient(var(--glass-border), var(--glass-border));
+      linear-gradient(var(--surface0), var(--surface0)),
+      linear-gradient(var(--surface0), var(--surface0)),
+      linear-gradient(var(--surface0), var(--surface0));
     background-size: 100% 1px;
     background-position: 0 0, 0 50%, 0 100%;
     background-repeat: no-repeat;
@@ -128,10 +147,9 @@
     width: 100%;
     height: 100%;
   }
-  .area {
-    fill: var(--accent);
-    fill-opacity: 0.16;
-  }
+  /* Fill is set inline via the per-instance <linearGradient> above — the one
+     gradient exception in the zen system: a vertical teal fade under the
+     trend line (see .areachart's <defs>). */
   .line {
     fill: none;
     stroke: var(--accent);

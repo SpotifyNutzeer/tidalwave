@@ -27,7 +27,7 @@
   }
   a {
     padding: 0.32rem 0.7rem;
-    border-radius: var(--r-pill);
+    border-radius: var(--r-xs);
     font-size: 0.85rem;
     color: var(--text-muted);
     text-decoration: none;
@@ -39,6 +39,6 @@
   }
   a[aria-current='page'] {
     color: var(--text);
-    background: var(--glass-bg-strong);
+    background: var(--surface0);
   }
 </style>

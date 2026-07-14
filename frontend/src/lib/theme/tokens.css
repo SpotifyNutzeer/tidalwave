@@ -1,10 +1,11 @@
 /*
- * tidalwave — Liquid-Glass Token-System (aquatic accent)
+ * tidalwave — Zen Token-System
  *
- * Same liquid-glass language as linkhop and the homepage: semi-transparent
- * "glass" surfaces floating over an animated atmospheric gradient-mesh, with
- * a fine grain for depth. The family differs only by accent — tidalwave's is
- * tidal/ocean: cyan + teal + deep-teal blobs, an aqua accent.
+ * Same design language as paul.wtf and the rest of the app family: opaque
+ * Catppuccin surfaces, zero decorative borders, teal as the single accent
+ * (sky reserved for the listening clock — the one natural "special element"
+ * in this app), JetBrains Mono everywhere, soft shadow only on free-floating
+ * cards.
  *
  * Themes map onto the existing store: data-theme="mocha" → dark (default),
  * data-theme="latte" → light. The old Catppuccin variable names are kept as
@@ -12,33 +13,32 @@
  */
 
 :root {
-  /* Atmospheric blobs — tidal current. */
-  --blob-a: 34, 211, 238;   /* cyan        */
-  --blob-b: 45, 212, 191;   /* aquamarine  */
-  --blob-c: 13, 148, 136;   /* deep teal   */
+  /* Shape / radii — nothing renders as a pill. */
+  --r-xs: 8px;
+  --r-sm: 10px;
+  --r-md: 10px;
+  --r-lg: 16px;
+  --r-xl: 16px;
+  --r-pill: 10px;
 
-  /* Shape / radii. */
-  --r-xs: 0.375rem;
-  --r-sm: 0.625rem;
-  --r-md: 1rem;
-  --r-lg: 1.5rem;
-  --r-xl: 1.75rem;
-  --r-pill: 9999px;
-
-  /* Motion. */
-  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
-  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
-  --dur-fast: 160ms;
-  --dur: 260ms;
-  --dur-slow: 420ms;
+  /* Motion — 200ms colour/opacity, 350ms position/size with slight jelly
+     overshoot. */
+  --ease-out: cubic-bezier(0.45, 0, 0.55, 1);
+  --ease-spring: cubic-bezier(0.34, 1.4, 0.64, 1);
+  --dur-fast: 200ms;
+  --dur: 350ms;
+  --dur-slow: 350ms;
 
   /* Typography. */
-  --font-display: 'Instrument Serif', ui-serif, Georgia, serif;
+  --font-display:
+    'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, 'SF Mono',
+    Menlo, monospace;
   --font-body:
-    -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Figtree',
-    system-ui, sans-serif;
+    'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, 'SF Mono',
+    Menlo, monospace;
   --font-mono:
-    ui-monospace, 'Geist Mono', 'SF Mono', 'JetBrains Mono', Menlo, monospace;
+    'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, 'SF Mono',
+    Menlo, monospace;
 
   color-scheme: light dark;
 }
@@ -46,87 +46,108 @@
 /* ------------------------------------------------------------------ DARK */
 :root,
 :root[data-theme='mocha'] {
-  --canvas: #06141a;
-  --canvas-2: #0a1f27;
+  /* Catppuccin Mocha ladder. */
+  --crust: #11111b;
+  --mantle: #181825;
+  --base: #1e1e2e;
+  --surface0: #313244;
+  --surface1: #45475a;
+  --overlay0: #6c7086;
+  --overlay2: #9399b2;
+  --subtext0: #a6adc8;
+  --subtext1: #bac2de;
 
-  --glass-bg: rgba(255, 255, 255, 0.06);
-  --glass-bg-strong: rgba(255, 255, 255, 0.1);
-  --glass-border: rgba(255, 255, 255, 0.16);
-  --glass-rim: rgba(255, 255, 255, 0.32);
-  --glass-shadow:
-    0 1px 0 0 rgba(255, 255, 255, 0.08) inset,
-    0 -1px 0 0 rgba(0, 0, 0, 0.4) inset,
-    0 18px 40px -12px rgba(0, 0, 0, 0.55),
-    0 6px 14px -6px rgba(0, 0, 0, 0.4);
+  --canvas: var(--crust);
+  --canvas-2: var(--mantle);
 
-  --text: rgba(231, 250, 252, 0.94);
-  --text-muted: rgba(231, 250, 252, 0.62);
-  --text-dim: rgba(231, 250, 252, 0.4);
+  --glass-bg: var(--base);
+  --glass-bg-strong: var(--surface0);
+  --glass-border: var(--surface0);
+  --glass-rim: var(--surface1);
+  --glass-shadow: 0 10px 30px -12px rgba(0, 0, 0, 0.55);
 
-  --accent: #5eead4;
-  --accent-contrast: #04282b;
-  --accent-soft: rgba(94, 234, 212, 0.16);
-  --accent-cyan: #67e8f9;
+  --text: #cdd6f4;
+  --text-muted: var(--subtext0);
+  --text-dim: var(--overlay2);
+  /* Both reach ≥4.5:1 on crust/mantle/base here — the mocha ladder has
+     enough range to keep a two-step hierarchy safe. */
 
-  --success: #86efac;
-  --warning: #fde68a;
-  --error: #fca5a5;
-  --error-soft: rgba(252, 165, 165, 0.14);
+  --accent: #94e2d5;
+  --accent-contrast: var(--crust);
+  --accent-soft: rgba(148, 226, 213, 0.25);
+  --accent-cyan: #89dceb;
+
+  --success: #a6e3a1;
+  --warning: #f9e2af;
+  --error: #f38ba8;
+  --error-soft: rgba(243, 139, 168, 0.16);
 
   color-scheme: dark;
 
   /* Legacy Catppuccin aliases — safety net for any unconverted reference. */
-  --base: var(--canvas);
-  --mantle: rgba(255, 255, 255, 0.04);
-  --surface: var(--glass-bg);
-  --subtext: var(--text-muted);
-  --mauve: var(--accent);
+  --base-legacy: var(--canvas);
+  --mauve: #cba6f7;
   --blue: var(--accent-cyan);
-  --green: var(--accent);
-  --peach: var(--warning);
+  --green: var(--success);
+  --peach: #fab387;
   --red: var(--error);
+  --subtext: var(--text-muted);
+  --surface: var(--surface0);
 }
 
 /* ------------------------------------------------------------------ LIGHT */
 :root[data-theme='latte'] {
-  --canvas: #f0fbfc;
-  --canvas-2: #e2f2f4;
+  /* Catppuccin Latte ladder. */
+  --crust: #dce0e8;
+  --mantle: #e6e9ef;
+  --base: #eff1f5;
+  --surface0: #ccd0da;
+  --surface1: #bcc0cc;
+  --overlay0: #9ca0b0;
+  --overlay2: #7c7f93;
+  --subtext0: #6c6f85;
+  --subtext1: #5c5f77;
 
-  --glass-bg: rgba(255, 255, 255, 0.58);
-  --glass-bg-strong: rgba(255, 255, 255, 0.8);
-  --glass-border: rgba(255, 255, 255, 0.72);
-  --glass-rim: rgba(255, 255, 255, 1);
-  --glass-shadow:
-    0 1px 0 0 rgba(255, 255, 255, 0.9) inset,
-    0 -1px 0 0 rgba(6, 50, 58, 0.06) inset,
-    0 18px 40px -14px rgba(6, 60, 70, 0.22),
-    0 6px 14px -6px rgba(6, 60, 70, 0.12);
+  --canvas: var(--crust);
+  --canvas-2: var(--mantle);
 
-  --text: rgba(6, 38, 44, 0.92);
-  --text-muted: rgba(6, 38, 44, 0.62);
-  --text-dim: rgba(6, 38, 44, 0.44);
+  --glass-bg: var(--base);
+  --glass-bg-strong: var(--surface0);
+  --glass-border: var(--surface0);
+  --glass-rim: var(--surface1);
+  --glass-shadow: 0 10px 30px -12px rgba(76, 79, 105, 0.25);
 
-  --accent: #0e7490;
-  --accent-contrast: #ffffff;
-  --accent-soft: rgba(14, 116, 144, 0.12);
-  --accent-cyan: #0891b2;
+  --text: #4c4f69;
+  /* Latte's overlay2/subtext0 fall short of 4.5:1 on crust/mantle/base at
+     this palette's exact hex values (measured ~3.0–4.4:1) despite reading
+     as the "safe" step in the dark ladder — both content roles collapse to
+     subtext1, the darkest step in the Latte ladder that clears 4.5:1
+     everywhere content actually sits (crust 4.73 / mantle 5.14 / base
+     5.53). overlay2 itself remains defined for decorative/aria-hidden use
+     (chart axis ticks) per the data-viz recipe. */
+  --text-muted: var(--subtext1);
+  --text-dim: var(--subtext1);
 
-  --success: #15803d;
-  --warning: #a16207;
-  --error: #b91c1c;
-  --error-soft: rgba(185, 28, 28, 0.08);
+  --accent: #179299;
+  --accent-contrast: var(--base);
+  --accent-soft: rgba(23, 146, 153, 0.18);
+  --accent-cyan: #04a5e5;
+
+  --success: #40a02b;
+  --warning: #df8e1d;
+  --error: #d20f39;
+  --error-soft: rgba(210, 15, 57, 0.1);
 
   color-scheme: light;
 
-  --base: var(--canvas);
-  --mantle: rgba(6, 50, 58, 0.04);
-  --surface: var(--glass-bg);
-  --subtext: var(--text-muted);
-  --mauve: var(--accent);
+  --base-legacy: var(--canvas);
+  --mauve: #8839ef;
   --blue: var(--accent-cyan);
-  --green: var(--accent);
-  --peach: var(--warning);
+  --green: var(--success);
+  --peach: #fe640b;
   --red: var(--error);
+  --subtext: var(--text-muted);
+  --surface: var(--surface0);
 }
 
 /* ----------------------------------------------------------- GLOBAL BASE */
@@ -136,6 +157,10 @@
   box-sizing: border-box;
 }
 
+html {
+  scrollbar-color: var(--surface1) var(--crust);
+}
+
 html,
 body {
   margin: 0;
@@ -143,8 +168,8 @@ body {
   min-height: 100vh;
   color: var(--text);
   font-family: var(--font-body);
-  font-size: 16px;
-  line-height: 1.5;
+  font-size: 15.5px;
+  line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
@@ -152,43 +177,7 @@ body {
 
 body {
   background: var(--canvas);
-  background-attachment: fixed;
   overflow-x: hidden;
-}
-
-/* Atmospheric gradient mesh + grain (scoped <style> can't reach body). */
-body::before,
-body::after {
-  content: '';
-  position: fixed;
-  inset: -20vmax;
-  z-index: -2;
-  pointer-events: none;
-}
-
-body::before {
-  background:
-    radial-gradient(42vmax 42vmax at 16% 20%, rgba(var(--blob-a), 0.28), transparent 60%),
-    radial-gradient(48vmax 48vmax at 84% 14%, rgba(var(--blob-b), 0.24), transparent 62%),
-    radial-gradient(54vmax 54vmax at 62% 96%, rgba(var(--blob-c), 0.28), transparent 64%);
-  filter: blur(72px) saturate(115%);
-  /* Static on purpose: an animated full-viewport blur forces every
-     backdrop-filter card to recompute each frame, pinning the GPU. */
-}
-
-:root[data-theme='latte'] body::before {
-  opacity: 0.7;
-}
-
-body::after {
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.35 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
-  opacity: 0.04;
-  mix-blend-mode: overlay;
-}
-
-:root[data-theme='latte'] body::after {
-  opacity: 0.06;
-  mix-blend-mode: multiply;
 }
 
 :focus-visible {
@@ -204,19 +193,26 @@ body::after {
 
 h1, h2, h3 {
   font-family: var(--font-display);
-  font-weight: 400;
-  letter-spacing: -0.01em;
-  line-height: 1.1;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
   margin: 0;
 }
 
-/* Glass surface primitive — reused across every card/panel. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Window primitive — reused across every card/panel. Opaque, borderless,
+   soft shadow only. No blur, no translucency. */
 .glass {
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
+  background: var(--base);
   border-radius: var(--r-lg);
-  backdrop-filter: blur(20px) saturate(140%);
-  -webkit-backdrop-filter: blur(20px) saturate(140%);
   box-shadow: var(--glass-shadow);
 }
 
@@ -252,8 +248,8 @@ h1, h2, h3 {
 .eyebrow {
   font-family: var(--font-mono);
   font-size: 0.7rem;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  text-transform: lowercase;
   color: var(--text-dim);
 }
 
@@ -279,7 +275,7 @@ h1, h2, h3 {
   height: 190px;
   font-family: var(--font-mono);
   font-size: 0.6rem;
-  color: var(--text-dim);
+  color: var(--overlay2);
   font-variant-numeric: tabular-nums;
 }
 .barchart {
@@ -289,9 +285,9 @@ h1, h2, h3 {
   height: 190px;
   /* Three faint gridlines aligned with the y-axis ticks (max / mid / 0). */
   background-image:
-    linear-gradient(var(--glass-border), var(--glass-border)),
-    linear-gradient(var(--glass-border), var(--glass-border)),
-    linear-gradient(var(--glass-border), var(--glass-border));
+    linear-gradient(var(--surface0), var(--surface0)),
+    linear-gradient(var(--surface0), var(--surface0)),
+    linear-gradient(var(--surface0), var(--surface0));
   background-size: 100% 1px;
   background-position: 0 0, 0 50%, 0 100%;
   background-repeat: no-repeat;
@@ -307,8 +303,8 @@ h1, h2, h3 {
   width: 100%;
   min-height: 2px;
   border-radius: var(--r-xs) var(--r-xs) 0 0;
-  background: linear-gradient(to top, var(--accent-soft), var(--accent));
-  transition: filter var(--dur) var(--ease-out);
+  background: var(--accent);
+  transition: filter var(--dur-fast) var(--ease-out);
 }
 .barchart .col:hover .bar {
   filter: brightness(1.18);
@@ -319,10 +315,9 @@ h1, h2, h3 {
   margin-top: 0.55rem;
   font-family: var(--font-mono);
   font-size: 0.64rem;
-  color: var(--text-dim);
+  color: var(--overlay2);
 }
 .barlabels.even span {
   flex: 1 1 0;
   text-align: center;
 }
-

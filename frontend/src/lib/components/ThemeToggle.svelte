@@ -13,23 +13,15 @@
     justify-content: center;
     width: 2.2rem;
     height: 2.2rem;
-    background: var(--glass-bg-strong);
+    background: var(--surface0);
     color: var(--text);
-    border: 1px solid var(--glass-border);
-    border-radius: var(--r-pill);
+    border: 0;
+    border-radius: var(--r-sm);
     font-size: 0.95rem;
     cursor: pointer;
-    transition:
-      border-color var(--dur) var(--ease-out),
-      transform var(--dur) var(--ease-spring);
+    transition: background var(--dur-fast) var(--ease-out);
   }
   button:hover {
-    border-color: var(--accent);
-    transform: translateY(-1px);
-  }
-  @media (prefers-reduced-motion: reduce) {
-    button {
-      transition: none;
-    }
+    background: var(--surface1);
   }
 </style>

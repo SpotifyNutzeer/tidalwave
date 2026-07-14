@@ -17,18 +17,17 @@
   }
   .value {
     font-family: var(--font-display);
-    font-weight: 400;
+    font-weight: 700;
     font-size: clamp(2rem, 5vw, 2.85rem);
     line-height: 1;
     letter-spacing: -0.02em;
-    color: var(--accent);
+    color: var(--text);
     font-variant-numeric: tabular-nums;
   }
   .label {
     font-family: var(--font-mono);
     font-size: 0.7rem;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
+    text-transform: lowercase;
     color: var(--text-muted);
   }
   .sub {

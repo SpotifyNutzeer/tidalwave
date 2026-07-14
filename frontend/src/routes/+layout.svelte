@@ -1,5 +1,6 @@
 <script lang="ts">
-  import '@fontsource/instrument-serif/400.css';
+  import '@fontsource-variable/jetbrains-mono';
+  import '@fontsource-variable/jetbrains-mono/wght-italic.css';
   import '$lib/theme/tokens.css';
   let { children } = $props();
 </script>

@@ -29,10 +29,7 @@
     gap: 0.75rem 1.25rem;
     flex-wrap: wrap;
     padding: 0.85rem clamp(1rem, 4vw, 2rem);
-    background: var(--glass-bg);
-    border-bottom: 1px solid var(--glass-border);
-    backdrop-filter: blur(20px) saturate(180%);
-    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    background: var(--mantle);
   }
   .lead {
     display: flex;
@@ -45,19 +42,19 @@
     align-items: center;
     gap: 0.55rem;
     font-family: var(--font-display);
-    font-size: 1.6rem;
+    font-weight: 700;
+    font-size: 1.35rem;
     line-height: 1;
     color: var(--text);
     text-decoration: none;
-    letter-spacing: -0.01em;
+    letter-spacing: -0.02em;
   }
-  /* Tide mark: a small aqua disc with a soft accent halo. */
+  /* Tide mark: a small solid teal square, echoing the favicon monogram. */
   .mark {
     width: 0.7rem;
     height: 0.7rem;
-    border-radius: var(--r-pill);
+    border-radius: 2px;
     background: var(--accent);
-    box-shadow: 0 0 0 0.28rem var(--accent-soft);
   }
   .actions {
     display: flex;
