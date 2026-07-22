@@ -20,6 +20,7 @@ describe('Dashboard', () => {
     render(Dashboard);
     await waitFor(() => expect(screen.getByText('42')).toBeInTheDocument());
     expect(screen.getByText('Daft Punk')).toBeInTheDocument();
+    expect(screen.getByText('Aerodynamic — Daft Punk')).toBeInTheDocument();
     expect(screen.getByText('2h 0m')).toBeInTheDocument(); // 7200s formatted
   });
 });

@@ -31,6 +31,14 @@ describe('TopList', () => {
     expect(screen.getAllByRole('link')).toHaveLength(4);
   });
 
+  it('renders items with identical labels (same track title, different artists)', () => {
+    render(TopList, { props: { title: 'Top Tracks', items: [
+      { label: 'Paradise', count: 12, query: 'Coldplay Paradise' },
+      { label: 'Paradise', count: 7, query: 'George Ezra Paradise' }
+    ] } });
+    expect(screen.getAllByText('Paradise')).toHaveLength(2);
+  });
+
   it('omits platform links when an item has no query', () => {
     render(TopList, { props: { title: 'Top Artists', items: [
       { label: 'Daft Punk', count: 10 }

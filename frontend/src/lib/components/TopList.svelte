@@ -20,7 +20,7 @@
     <p class="empty">No data yet.</p>
   {:else}
     <ol>
-      {#each visible as item, i (item.label)}
+      {#each visible as item, i}
         <li>
           <span class="bar" class:top={i === 0} style="width: {(item.count / max) * 100}%"></span>
           <span class="rank">{i + 1}</span>

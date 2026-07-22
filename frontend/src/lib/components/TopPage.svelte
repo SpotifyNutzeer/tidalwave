@@ -28,7 +28,7 @@
           if (k === 'artists') {
             items = (await api.shared.topArtists(token, 100)).map((r) => ({ label: r.artist, count: r.count, query: r.artist }));
           } else if (k === 'tracks') {
-            items = (await api.shared.topTracks(token, 100)).map((r) => ({ label: r.track, count: r.count, query: `${r.artist} ${r.track}` }));
+            items = (await api.shared.topTracks(token, 100)).map((r) => ({ label: `${r.track} — ${r.artist}`, count: r.count, query: `${r.artist} ${r.track}` }));
           } else {
             items = (await api.shared.topAlbums(token, 100)).map((r) => ({ label: r.album ?? 'Unknown album', count: r.count, query: r.album ?? undefined }));
           }
@@ -38,7 +38,7 @@
           if (k === 'artists') {
             items = (await api.topArtists(100, params)).map((r) => ({ label: r.artist, count: r.count, query: r.artist }));
           } else if (k === 'tracks') {
-            items = (await api.topTracks(100, params)).map((r) => ({ label: r.track, count: r.count, query: `${r.artist} ${r.track}` }));
+            items = (await api.topTracks(100, params)).map((r) => ({ label: `${r.track} — ${r.artist}`, count: r.count, query: `${r.artist} ${r.track}` }));
           } else {
             items = (await api.topAlbums(100, params)).map((r) => ({ label: r.album ?? 'Unknown album', count: r.count, query: r.album ?? undefined }));
           }

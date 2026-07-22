@@ -43,7 +43,7 @@
     summary = s;
     metrics = m;
     artists = ar.map((x) => ({ label: x.artist, count: x.count, query: x.artist }));
-    tracks = tr.map((x) => ({ label: x.track, count: x.count, query: `${x.artist} ${x.track}` }));
+    tracks = tr.map((x) => ({ label: `${x.track} — ${x.artist}`, count: x.count, query: `${x.artist} ${x.track}` }));
     albums = al.map((x) => ({
       label: x.album ?? 'Unknown album', count: x.count, query: x.album ?? undefined
     }));
