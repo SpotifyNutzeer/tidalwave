@@ -20,7 +20,7 @@
   "devDependencies": {
     "@playwright/test": "^1.61.0",
     "@sveltejs/adapter-static": "^3.0.0",
-    "@sveltejs/kit": "^2.60.1",
+    "@sveltejs/kit": "^2.69.1",
     "@sveltejs/vite-plugin-svelte": "^6.0.0",
     "@testing-library/jest-dom": "^6.4.0",
     "@testing-library/svelte": "^5.2.0",
@@ -39,7 +39,7 @@
     "overrides": {
       "cookie@<0.7.0": ">=0.7.0",
       "esbuild@<0.28.1": ">=0.28.1",
-      "js-yaml@<4.2.0": ">=4.2.0"
+      "js-yaml@<4.3.0": ">=4.3.0 <5"
     }
   },
   "dependencies": {
