@@ -9,6 +9,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from tidalwave.models.db import Listen, SyncState
 from tidalwave.models.domain import Scrobble
 
+# Postgres binds at most 32767 parameters per statement. Dividing by the column
+# count gives the largest number of rows a single INSERT can carry.
+_PG_MAX_BIND_PARAMS = 32767
+
 
 async def upsert_listens(
     session: AsyncSession, user_id: int, scrobbles: list[Scrobble]
@@ -35,14 +39,20 @@ async def upsert_listens(
     ]
     if not rows:
         return 0
-    stmt = (
-        pg_insert(Listen)
-        .values(rows)
-        .on_conflict_do_nothing(constraint="uq_listen_dedup")
-        .returning(Listen.id)
-    )
-    result = await session.execute(stmt)
-    return len(result.fetchall())
+    # A first backfill spans the whole listening history, which is far more rows than
+    # one statement can bind — insert in chunks that stay under the parameter limit.
+    chunk_size = _PG_MAX_BIND_PARAMS // len(rows[0])
+    inserted = 0
+    for start in range(0, len(rows), chunk_size):
+        stmt = (
+            pg_insert(Listen)
+            .values(rows[start : start + chunk_size])
+            .on_conflict_do_nothing(constraint="uq_listen_dedup")
+            .returning(Listen.id)
+        )
+        result = await session.execute(stmt)
+        inserted += len(result.fetchall())
+    return inserted
 
 
 async def get_sync_state(session: AsyncSession, user_id: int) -> SyncState | None:

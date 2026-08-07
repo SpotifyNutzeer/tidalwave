@@ -35,6 +35,38 @@ async def test_upsert_inserts_and_dedups(db_session):
     assert total == 3
 
 
+async def test_upsert_handles_more_rows_than_the_bind_parameter_limit(db_session):
+    # Postgres allows at most 32767 bind parameters per statement, and a listen row
+    # binds 8 columns — so a single INSERT tops out at 4095 rows. A first backfill of
+    # a long history easily exceeds that, so the insert has to be split into chunks.
+    user = await upsert_user_from_session(db_session, "alice", "sk", mode="open", allowlist=[])
+    many = [_scrobble(f"t{i}", 1000 + i) for i in range(5000)]
+
+    inserted = await upsert_listens(db_session, user.id, many)
+
+    assert inserted == 5000
+    total = (
+        await db_session.execute(select(func.count()).select_from(Listen))
+    ).scalar_one()
+    assert total == 5000
+
+
+async def test_upsert_dedups_across_chunk_boundaries(db_session):
+    # Re-importing the same oversized history must stay idempotent, not just within
+    # one chunk — the dedup constraint has to hold for every chunk of the second run.
+    user = await upsert_user_from_session(db_session, "alice", "sk", mode="open", allowlist=[])
+    many = [_scrobble(f"t{i}", 1000 + i) for i in range(5000)]
+    await upsert_listens(db_session, user.id, many)
+
+    reinserted = await upsert_listens(db_session, user.id, [*many, _scrobble("new", 90000)])
+
+    assert reinserted == 1
+    total = (
+        await db_session.execute(select(func.count()).select_from(Listen))
+    ).scalar_one()
+    assert total == 5001
+
+
 async def test_now_playing_scrobbles_are_skipped(db_session):
     user = await upsert_user_from_session(db_session, "alice", "sk", mode="open", allowlist=[])
     np = Scrobble(artist="A", track_title="np", album=None, played_at=None, now_playing=True)
